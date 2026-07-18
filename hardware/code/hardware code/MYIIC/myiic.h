@@ -2,8 +2,8 @@
 #define __MYIIC_H
 
 #include "stm32f10x.h"
-#define I2C_WR	0		/* Ð´¿ØÖÆbit */
-#define I2C_RD	1		/* ¶Á¿ØÖÆbit */
+#define I2C_WR	0		
+#define I2C_RD	1		
 
 void bsp_InitI2C(void);
 void i2c_Start(void);

@@ -8,11 +8,11 @@ void shake_Init(void)
 	{
 		GPIO_InitTypeDef GPIO_InitStructure;
 		
-		RCC_APB2PeriphClockCmd (shake_AO_GPIO_CLK, ENABLE );	// 打开 ADC IO端口时钟
-		GPIO_InitStructure.GPIO_Pin = shake_AO_GPIO_PIN;					// 配置 ADC IO 引脚模式
-		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;		// 设置为模拟输入
+		RCC_APB2PeriphClockCmd (shake_AO_GPIO_CLK, ENABLE );	
+		GPIO_InitStructure.GPIO_Pin = shake_AO_GPIO_PIN;					
+		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_AIN;		
 		
-		GPIO_Init(shake_AO_GPIO_PORT, &GPIO_InitStructure);				// 初始化 ADC IO
+		GPIO_Init(shake_AO_GPIO_PORT, &GPIO_InitStructure);				
 
 		ADCx_Init();
 	}
@@ -20,11 +20,11 @@ void shake_Init(void)
 	{
 		GPIO_InitTypeDef GPIO_InitStructure;
 		
-		RCC_APB2PeriphClockCmd (shake_DO_GPIO_CLK, ENABLE );	// 打开连接 传感器DO 的单片机引脚端口时钟
-		GPIO_InitStructure.GPIO_Pin = shake_DO_GPIO_PIN;			// 配置连接 传感器DO 的单片机引脚模式
-		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;			// 设置为上拉输入
+		RCC_APB2PeriphClockCmd (shake_DO_GPIO_CLK, ENABLE );	
+		GPIO_InitStructure.GPIO_Pin = shake_DO_GPIO_PIN;			
+		GPIO_InitStructure.GPIO_Mode = GPIO_Mode_IPU;			
 		
-		GPIO_Init(shake_DO_GPIO_PORT, &GPIO_InitStructure);				// 初始化 
+		GPIO_Init(shake_DO_GPIO_PORT, &GPIO_InitStructure);				
 		
 	}
 	#endif
@@ -34,7 +34,7 @@ void shake_Init(void)
 #if MODE
 uint16_t shake_ADC_Read(void)
 {
-	//设置指定ADC的规则组通道，采样时间
+	
 	return ADC_GetValue(ADC_CHANNEL, ADC_SampleTime_55Cycles5);
 }
 #endif
@@ -63,14 +63,14 @@ uint16_t shake_GetData(void)
 #if MODE
 uint8_t shake_UpdateStatus(void)
 {
-    uint16_t adcValue = shake_GetData();   // 获取多次采样平均值
+    uint16_t adcValue = shake_GetData();   
     if (adcValue < SHAKE_AO_THRESHOLD)
     {
-         return 1;// 无震动
+         return 1;
     }
     else
     {
-         return 0;// 有震动
+         return 0;
     }
 }
 #endif

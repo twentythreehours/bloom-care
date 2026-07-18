@@ -1,61 +1,44 @@
 #include "key.h"
 
-/*****************异方辰电子工作室******************
-												STM32
-											
- * 文件			:	KEY按键例程（包含短按/长按/连按）.c文件
- * 版本	    :	V2.0
- * 日期	    :	2025.9.20
- * MCU	    :	STM32F103C8T6
- * 接口	    :	见代码
- * IP账号		:	异方辰电子（同BILIBILI|抖音|快手|小红书|CSDN|公众号|视频号等）
- * 作者			:	辰哥
- * 工作室		: 异方辰电子工作室
- * 讲解视频	:	https://www.bilibili.com/video/BV1JXU8BuEVJ/?share_source=copy_web&vd_source=097fdeaf6b6ecfed8a9ff7119c32faf2
- * 官方网站	:	www.yfcdz.cn
- * 授权IP	 	:	辰哥单片机设计、异方辰电子、YFC电子、异方辰系列 
-
-**********************BEGIN***********************/	
-
-//KEY1---短按/长按
-
-uint16_t		key1_cnt;					//CNT计数标志
-uint8_t			key1_short_flag;	//短按标志
-uint8_t			key1_lock_flag;		//长按-锁标志
-uint8_t			key1_long_flag;		//长按-标志
 
 
-//KEY2---短按/长按
-
-uint16_t	key2_cnt;					//CNT计数标志
-uint8_t		key2_short_flag;	//短按标志
-uint8_t		key2_lock_flag;		//长按-锁标志
-uint8_t		key2_long_flag;		//长按-标志
+uint16_t		key1_cnt;				
+uint8_t			key1_short_flag;	
+uint8_t			key1_lock_flag;		
+uint8_t			key1_long_flag;		
 
 
-//KEY3---短按/连按
 
-uint16_t	key3_cnt;					//CNT计数标志
+
+uint16_t	key2_cnt;					
+uint8_t		key2_short_flag;	
+uint8_t		key2_lock_flag;		
+uint8_t		key2_long_flag;		
+
+
+
+
+uint16_t	key3_cnt;					
 uint16_t	key3_cnt2;				
-uint8_t		key3_short_flag;	//短按标志
-uint8_t		key3_lock_flag;		//长按-锁标志
+uint8_t		key3_short_flag;	
+uint8_t		key3_lock_flag;		
 
 
 
 
-//KEY4---短按/连按
 
-uint16_t	key4_cnt;					//CNT计数标志
+
+uint16_t	key4_cnt;					
 uint16_t	key4_cnt2;				
-uint8_t		key4_short_flag;	//短按标志
-uint8_t		key4_lock_flag;		//长按-锁标志
+uint8_t		key4_short_flag;	
+uint8_t		key4_lock_flag;		
 
 
-u8 KeyNum = 0;							//按键码
+u8 KeyNum = 0;							
 /**
-  * @brief  Key初始化
-  * @param  无
-  * @retval 无
+  * @brief  
+  * @param  
+  * @retval 
   */
 void Key_Init(void)
 {
@@ -71,94 +54,90 @@ void Key_Init(void)
 }
 
 /**
-  * @brief  Key_scan() 用于定时为1ms的中断中，主程序通过判断KeyNum的值进行按键状态判断,KEY1，KEY2支持短按/长按，KEY3,KEY4 支持短按/连击
-  * @param  无
-  * @retval 返回触发按键的键值
+  * @brief  
+  * @param  
+  * @retval 
   */
 void Key_scan(void)
 {
 	
-	/*按键松手进行状态判断*/
-	if(KEY1) 												   //如果没有按键按下
+
+	if(KEY1) 												  
 	{
-		key1_lock_flag = 0;					     //清零自锁标志
-		key1_cnt = 0; 								   //清零计数标志
+		key1_lock_flag = 0;					    
+		key1_cnt = 0; 								   
 		if(key1_short_flag)
 		{
-			key1_short_flag = 0;			     //清零短按标志位
-			KeyNum = KEY1_Short; 					 //赋键值编码 短按键值编码
+			key1_short_flag = 0;			     
+			KeyNum = KEY1_Short; 					 
 		}
 		if(key1_long_flag)
 		{
-			key1_long_flag = 0;						  //清零长按标志位
-			KeyNum = KEY1_Long; 						//赋键值编码 长按键值编码
+			key1_long_flag = 0;						 
+			KeyNum = KEY1_Long; 						
 		}
 	}
-	
-	/*按键按下*/     										//默认为短按
+ 										
 	else if(!key1_lock_flag)
 	{
-		key1_cnt++; 											//累计按键消抖延时次数
-		if(key1_cnt > KEY_DELAY_TIME)		// KEY_DELAY_TIME--消抖延时
+		key1_cnt++; 											
+		if(key1_cnt > KEY_DELAY_TIME)		
 		{
-			key1_cnt = 0; 									//清零计数标志
-			key1_short_flag = 1;						//短按标志位
-			key1_long_flag = 0;							//赋长按标志位
-			key1_lock_flag = 1; 						//自锁标志置1 防止多次触发
+			key1_cnt = 0; 									
+			key1_short_flag = 1;						
+			key1_long_flag = 0;							
+			key1_lock_flag = 1; 						
 		}
 	}
 	
 		else
 	{
-		key1_cnt++;												//累计按键长按功能延时时间
+		key1_cnt++;												
 		
-		if(key1_cnt > KEY_LONG_TIME	)			//KEY_LONG_TIME--长按阈值
-		{
+		if(key1_cnt > KEY_LONG_TIME	)			
 			
-			key1_short_flag = 0;						//短按---改长按
-			key1_long_flag = 1;							//赋长按标志位
-		}
+			key1_short_flag = 0;						
+			key1_long_flag = 1;							
 	}
 
 /*-------------------------------------------------------------------------------------------------*/		
 	
-	/*按键松手进行状态判断*/
-	if(KEY2) 														 //如果没有按键按下
+	
+	if(KEY2) 														
 	{
-		key2_lock_flag = 0; 							 //清零自锁标志
-		key2_cnt = 0; 										 //清零计数标志
+		key2_lock_flag = 0; 							 
+		key2_cnt = 0; 										
 		if(key2_short_flag)
 		{
-			key2_short_flag = 0; 						 //清零短按标志位
-			KeyNum = KEY2_Short; 						 //赋键值编码 短按键值编码
+			key2_short_flag = 0; 						 
+			KeyNum = KEY2_Short; 					
 		}
 		if(key2_long_flag)
 		{
-			key2_long_flag = 0;							 //清零长按标志位
-			KeyNum = KEY2_Long;							 //赋键值编码 长按键值编码
+			key2_long_flag = 0;							
+			KeyNum = KEY2_Long;							
 		}
 	}
 	
-	/*按键按下*/ 													//默认为短按
+												
 	else if(!key2_lock_flag)
 	{
-		key2_cnt++; 												//累计按键消抖延时次数
+		key2_cnt++; 											
 		if(key2_cnt > KEY_DELAY_TIME)
 		{
-			key2_cnt = 0; 										//清零计数标志
+			key2_cnt = 0; 										
 			key2_short_flag = 1;
-			key2_long_flag = 0;								//赋长按标志位
-			key2_lock_flag = 1; 							//自锁标志置1 防止多次触发
+			key2_long_flag = 0;								
+			key2_lock_flag = 1; 							
 		}
 	}
 		else
 	{
-		key2_cnt++;													//累计按键长按功能延时时间
-
+		key2_cnt++;													
 		if(key2_cnt > KEY_LONG_TIME)
 		{
-			key2_short_flag = 0;							//短按---改长按
-			key2_long_flag = 1;								//赋长按标志位
+			key2_short_flag = 0;							
+			key2_long_flag = 1;								
 		}
 	}
 	
@@ -166,38 +145,38 @@ void Key_scan(void)
 /*-------------------------------------------------------------------------------------------------*/	
 	
 	
-	/*按键松手/按键未按下*/
-	if(KEY3) 																   //如果没有按键按下
+
+	if(KEY3) 																  
 	{
-		key3_lock_flag = 0; 									   //清零自锁标志
-		key3_cnt = 0; 												   //清零计数标志
+		key3_lock_flag = 0; 									   
+		key3_cnt = 0; 												  
 				 
 	}
-	/*按键按下*/ 															  //默认为短按
+														 
 	else if(!key3_lock_flag)
 	{
-		key3_cnt++; 														  //累计按键消抖延时次数
+		key3_cnt++; 														 
 		if(key3_cnt > KEY_DELAY_TIME)
 		{
-			key3_cnt = 0; 												  //清零计数标志
-			KeyNum = KEY3_Short; 										//赋键值编码 短按键值编码
-			key3_lock_flag = 1; 									  //自锁标志置1 防止多次触发
+			key3_cnt = 0; 												 
+			KeyNum = KEY3_Short; 										
+			key3_lock_flag = 1; 									  
 		}
 	}
 																						  
-	else if(key3_cnt < KEY_Continue_TIME)				//KEY_Continue_TIME---短按最长停留时间
+	else if(key3_cnt < KEY_Continue_TIME)				
 	{
-		key3_cnt++;															  //累计按键连击功能触发时间
+		key3_cnt++;															
 	}
 																							
-	else																				//按键已长时间按下--进行连击阈值判断		
+	else																				
 	{
 
-		key3_cnt2++;															//累计按键连击功能延迟时间
-		if(key3_cnt2 > KEY_Continue_Trigger_TIME )//KEY_Continue_Trigger_TIME--连击阈值
+		key3_cnt2++;															
+		if(key3_cnt2 > KEY_Continue_Trigger_TIME )
 		{
-			key3_cnt2 = 0;													//清零连击延迟时间
-			KeyNum = KEY3_Lianji;										//赋连击编码键值
+			key3_cnt2 = 0;													
+			KeyNum = KEY3_Lianji;										
 		}
 		
 
@@ -207,32 +186,32 @@ void Key_scan(void)
 /*-------------------------------------------------------------------------------------------------*/		
 	
 	
-	if(KEY4) 																		   //如果没有按键按下
+	if(KEY4) 																		   
 	{
-		key4_lock_flag = 0; 											   //清零自锁标志
-		key4_cnt = 0; 														   //清零计数标志	
+		key4_lock_flag = 0; 											  
+		key4_cnt = 0; 														   
 	}
 	else if(!key4_lock_flag)
 	{
-		key4_cnt++; 															   //累计按键消抖延时次数
+		key4_cnt++; 															   
 		if(key4_cnt > KEY_DELAY_TIME)
 		{
-			key4_cnt = 0; 													   //清零计数标志
-			KeyNum =  KEY4_Short; 										 //赋键值编码 短按键值编码
-			key4_lock_flag = 1; 											 //自锁标志置1 防止多次触发
+			key4_cnt = 0; 													  
+			KeyNum =  KEY4_Short; 										
+			key4_lock_flag = 1; 											
 		}
 	}
 	else if(key4_cnt < KEY_Continue_TIME)
 	{
-		key4_cnt++;																	  //累计按键连击功能触发时间
+		key4_cnt++;																	 
 	}
-	else																						//按键已长时间按下--进行连击阈值判断	
+	else																						
 	{	
-		key4_cnt2++;																	//累计按键连击功能延迟时间
+		key4_cnt2++;																	
 		if(key4_cnt2 > KEY_Continue_Trigger_TIME)
 		{
-			key4_cnt2 = 0;														  //清零连击延迟时间
-			KeyNum = KEY4_Lianji;												//赋连击编码键值
+			key4_cnt2 = 0;														  
+			KeyNum = KEY4_Lianji;												
 		}
 
 	

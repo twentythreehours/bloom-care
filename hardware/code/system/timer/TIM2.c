@@ -1,5 +1,5 @@
 #include "TIM2.h"                  // Device header
-#include "delay.h"                 // 添加这行，包含delay头文件
+#include "delay.h"                
 
 void TIM2_Init(u16 Prescaler, u16 Period)	//0-65535
 {
@@ -27,12 +27,12 @@ void TIM2_Init(u16 Prescaler, u16 Period)	//0-65535
 	TIM_Cmd(TIM2, ENABLE);
 }
 
-void TIM2_IRQHandler(void)	//2ms定时中断
+void TIM2_IRQHandler(void)	
 {
 	if (TIM_GetITStatus(TIM2, TIM_IT_Update) != RESET ) 
 	{
-		Key_scan();	//按键扫描函数
-		delay_inc_tick(); // 添加系统滴答计数
+		Key_scan();	
+		delay_inc_tick(); 
 		
 		TIM_ClearITPendingBit(TIM2, TIM_IT_Update);				
 	}	

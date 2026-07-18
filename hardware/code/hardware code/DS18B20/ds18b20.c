@@ -1,33 +1,18 @@
 #include "ds18b20.h"
 #include "delay.h"	
 	
-/*****************辰哥单片机设计******************
-											STM32
- * 文件			:	DS18B20数字温度传感器c文件                   
- * 版本			: V1.0
- * 日期			: 2024.8.13
- * MCU			:	STM32F103C8T6
- * 接口			:	见DS18B20.h文件						
- * IP账号		:	辰哥单片机设计（同BILIBILI|抖音|快手|小红书|CSDN|公众号|视频号等）
- * 作者			:	辰哥 
- * 工作室		: 异方辰电子工作室
- * 讲解视频	:	https://www.bilibili.com/video/BV1WE421w791/?share_source=copy_web
- * 官方网站	:	www.yfcdz.cn
 
-**********************BEGIN***********************/
 
 
 void DS18B20_Rst(void)	   
 {                 
-		DS18B20_Mode(OUT); 	//SET OUTPUT
-    DS18B20_Low; 				//拉低DQ
-    delay_us(750);    	//拉低750us
-    DS18B20_High; 			//DQ=1 
-		delay_us(15);     	//15US
+		DS18B20_Mode(OUT); 	
+    DS18B20_Low; 				
+    delay_us(750);    	
+    DS18B20_High; 			
+		delay_us(15);     	
 }
-//等待DS18B20的回应
-//返回1:未检测到DS18B20的存在
-//返回0:存在
+
 u8 DS18B20_Check(void) 	   
 {   
 	u8 retry=0;
@@ -47,8 +32,7 @@ u8 DS18B20_Check(void)
 	if(retry>=240)return 1;	    
 	return 0;
 }
-//从DS18B20读取一个位
-//返回值：1/0
+
 u8 DS18B20_Read_Bit(void) 	 
 {
     u8 data;
@@ -63,8 +47,7 @@ u8 DS18B20_Read_Bit(void)
     delay_us(50);           
     return data;
 }
-//从DS18B20读取一个字节
-//返回值：读到的数据
+
 u8 DS18B20_Read_Byte(void)     
 {        
     u8 i,j,dat;
@@ -76,8 +59,7 @@ u8 DS18B20_Read_Byte(void)
     }						    
     return dat;
 }
-//写一个字节到DS18B20
-//dat：要写入的字节
+
 void DS18B20_Write_Byte(u8 dat)     
  {             
     u8 j;
@@ -103,7 +85,7 @@ void DS18B20_Write_Byte(u8 dat)
         }
     }
 }
-//开始温度转换
+
 void DS18B20_Start(void) 
 {   						               
     DS18B20_Rst();	   
@@ -112,29 +94,25 @@ void DS18B20_Start(void)
     DS18B20_Write_Byte(0x44);	// convert
 } 
 
-//初始化DS18B20的IO口 DQ 同时检测DS的存在
-//返回1:不存在
-//返回0:存在    	 
+   	 
 u8 DS18B20_Init(void)
 {
  	GPIO_InitTypeDef  GPIO_InitStructure;
  	
- 	RCC_APB2PeriphClockCmd(DS18B20_GPIO_CLK, ENABLE);	 //使能PORTA口时钟 
+ 	RCC_APB2PeriphClockCmd(DS18B20_GPIO_CLK, ENABLE);	 
 	
- 	GPIO_InitStructure.GPIO_Pin = DS18B20_GPIO_PIN;				//PORTA.6 推挽输出
+ 	GPIO_InitStructure.GPIO_Pin = DS18B20_GPIO_PIN;				
  	GPIO_InitStructure.GPIO_Mode = GPIO_Mode_Out_PP; 		  
  	GPIO_InitStructure.GPIO_Speed = GPIO_Speed_50MHz;
  	GPIO_Init(DS18B20_GPIO_PORT, &GPIO_InitStructure);
 
- 	GPIO_SetBits(DS18B20_GPIO_PORT,DS18B20_GPIO_PIN);    //输出1
+ 	GPIO_SetBits(DS18B20_GPIO_PORT,DS18B20_GPIO_PIN);   
 
 	DS18B20_Rst();
 
 	return DS18B20_Check();
 }  
-//从ds18b20得到温度值
-//精度：0.1C
-//返回值：温度值 （-550~1250） 
+
 short DS18B20_Get_Temp(void)
 {
     u8 temp;
@@ -152,24 +130,24 @@ short DS18B20_Get_Temp(void)
     {
         TH=~TH;
         TL=~TL; 
-        temp=0;					//温度为负  
-    }else temp=1;				//温度为正	  	  
-    tem=TH; 					//获得高八位
+        temp=0;					
+    }else temp=1;				 	  
+    tem=TH; 					
     tem<<=8;    
-    tem+=TL;					//获得底八位
-    tem=(float)tem*0.625;		//转换     
+    tem+=TL;					
+    tem=(float)tem*0.625;		  
 		 if(tem > 800)
     {
-        return 0;  // 返回特殊标记，表示超出显示阈值
+        return 0;  
     }
-	if(temp)return tem; 		//返回温度值
+	if(temp)return tem; 		
 	else return -tem;    
 }
 
 void DS18B20_Mode(u8 mode)
 {
 	GPIO_InitTypeDef GPIO_InitStructure;
-	RCC_APB2PeriphClockCmd(DS18B20_GPIO_CLK, ENABLE);	 //使能PORTA口时钟
+	RCC_APB2PeriphClockCmd(DS18B20_GPIO_CLK, ENABLE);	
 	
 	if(mode)
 	{

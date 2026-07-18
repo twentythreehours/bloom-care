@@ -11,11 +11,11 @@
 #include "usart.h"
 #include "shake.h"
 
-// 外部变量声明
+
 extern SensorModules sensorData;
 extern SensorThresholdValue Sensorthreshold;
 extern DriveModules driveData;
-// 代码2的计步全局变量声明
+
  u16 bushu;
  u16 mileage_bushu;
  u16 bu_long;
@@ -26,7 +26,7 @@ static uint8_t temp_read_state = 0;
 static uint32_t temp_start_time = 0;
 static uint32_t last_sensor_update[7] = {0};
 
-// 传感器更新间隔（完全保留代码1）
+
 #define LUX_UPDATE_INTERVAL     100   
 #define TEMP_UPDATE_INTERVAL    400   
 #define HR_UPDATE_INTERVAL      50    
@@ -61,7 +61,7 @@ typedef struct {
 } DisplayParts;
 static DisplayParts displayParts;
 
-// 温度数据拆分函数（完全保留代码1）
+
 void Update_Display_Parts(void)
 {
     displayParts.temp_int = (uint8_t)sensorData.temp;
@@ -88,7 +88,7 @@ uint8_t FallDetect(void)
             fall_flag = 0;
         }
     }
-//    sensorData.fall = fall_flag; // 同步到结构体
+//    sensorData.fall = fall_flag; 
     return fall_flag;
 }
 
@@ -257,10 +257,10 @@ void SensorScan(void)
         last_adxl_update = current_time;
     }
     
-    // ========== 步数更新（调用修改后的步数计算） ==========
+
     if (current_time - last_step_update > STEP_UPDATE_INTERVAL)
     {
-        StepCountUpdate(); // 调用新的计步逻辑
+        StepCountUpdate(); 
         last_step_update = current_time;
     }
 		

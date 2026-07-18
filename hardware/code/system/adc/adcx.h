@@ -2,7 +2,7 @@
 #define _ADCX_H_
 #include "stm32f10x.h"                  // Device header
 
-// ADC ±àºÅÑ¡Ôñ
+
 #define    ADCx                          ADC1
 #define    ADC_CLK                       RCC_APB2Periph_ADC1
 

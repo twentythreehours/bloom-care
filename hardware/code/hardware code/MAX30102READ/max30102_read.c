@@ -40,7 +40,7 @@ void Init_MAX30102(void)
     un_min = 0x3FFFF;
     un_max = 0;
     
-	  bsp_InitI2C();//IIC≥ı ºªØ
+	  bsp_InitI2C();
 	  maxim_max30102_reset(); //resets the MAX30102
     maxim_max30102_read_reg(REG_INTR_STATUS_1, &uch_dummy); //Reads/clears the interrupt status register
     maxim_max30102_init();  //initialize the MAX30102

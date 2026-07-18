@@ -3,23 +3,7 @@
 #include "sys.h"
 #include "stdlib.h"	
 
-/*****************辰哥单片机设计******************
-											STM32
- * 文件			:	OLED显示屏h文件                    
- * 版本			: V1.0
- * 日期			: 2024.8.7
- * MCU			:	STM32F103C8T6
- * 接口			:	见代码							
- * IP账号		:	辰哥单片机设计（同BILIBILI|抖音|快手|小红书|CSDN|公众号|视频号等）
- * 作者			:	辰哥 
- * 工作室		: 异方辰电子工作室
- * 讲解视频	:	https://www.bilibili.com/video/BV17Z421K7vV/?share_source=copy_web&vd_source=097fdeaf6b6ecfed8a9ff7119c32faf2
- * 官方网站	:	www.yfcdz.cn
 
-**********************BEGIN***********************/
-
-//----------------OLED端口定义----------------- 
-/***************根据自己需求更改****************/
 #define OLED_SCL_PORT  			GPIOB
 #define OLED_SCL_PIN				GPIO_Pin_6
 #define OLED_SCL_GPIO_CLK   RCC_APB2Periph_GPIOB
@@ -34,8 +18,8 @@
 #define OLED_SDA_Clr() GPIO_ResetBits(OLED_SDA_PORT,OLED_SDA_PIN)//DIN
 #define OLED_SDA_Set() GPIO_SetBits(OLED_SDA_PORT,OLED_SDA_PIN)
 
-#define OLED_CMD  0	//写命令
-#define OLED_DATA 1	//写数据
+#define OLED_CMD  0	
+#define OLED_DATA 1	
 
 void OLED_ClearPoint(u8 x,u8 y);
 void OLED_ColorTurn(u8 i);

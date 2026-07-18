@@ -25,40 +25,39 @@ bool maxim_max30102_write_reg(uint8_t uch_addr, uint8_t uch_data)
 * \retval       true on success
 */
 {
-    /* 第1步：发起I2C总线启动信号 */
+   
     i2c_Start();
 
-    /* 第2步：发起控制字节，高7bit是地址，bit0是读写控制位，0表示写，1表示读 */
-    i2c_SendByte(max30102_WR_address | I2C_WR);	/* 此处是写指令 */
+  
+    i2c_SendByte(max30102_WR_address | I2C_WR);	
 
-    /* 第3步：发送ACK */
+ 
     if (i2c_WaitAck() != 0)
     {
-        goto cmd_fail;	/* EEPROM器件无应答 */
+        goto cmd_fail;	
     }
 
-    /* 第4步：发送字节地址 */
+  
     i2c_SendByte(uch_addr);
     if (i2c_WaitAck() != 0)
     {
-        goto cmd_fail;	/* EEPROM器件无应答 */
+        goto cmd_fail;	
     }
 
-    /* 第5步：开始写入数据 */
+   
     i2c_SendByte(uch_data);
 
-    /* 第6步：发送ACK */
+
     if (i2c_WaitAck() != 0)
     {
-        goto cmd_fail;	/* EEPROM器件无应答 */
+        goto cmd_fail;	
     }
 
-    /* 发送I2C总线停止信号 */
+   
     i2c_Stop();
-    return true;	/* 执行成功 */
+    return true;	
 
-cmd_fail: /* 命令执行失败后，切记发送停止信号，避免影响I2C总线上其他设备 */
-    /* 发送I2C总线停止信号 */
+cmd_fail: 
     i2c_Stop();
     return false;
 }
@@ -75,50 +74,49 @@ bool maxim_max30102_read_reg(uint8_t uch_addr, uint8_t *puch_data)
 * \retval       true on success
 */
 {
-    /* 第1步：发起I2C总线启动信号 */
+  
     i2c_Start();
 
-    /* 第2步：发起控制字节，高7bit是地址，bit0是读写控制位，0表示写，1表示读 */
-    i2c_SendByte(max30102_WR_address | I2C_WR);	/* 此处是写指令 */
+    
+    i2c_SendByte(max30102_WR_address | I2C_WR);	
 
-    /* 第3步：发送ACK */
+
     if (i2c_WaitAck() != 0)
     {
-        goto cmd_fail;	/* EEPROM器件无应答 */
+        goto cmd_fail;	
     }
 
-    /* 第4步：发送字节地址， */
+
     i2c_SendByte((uint8_t)uch_addr);
     if (i2c_WaitAck() != 0)
     {
-        goto cmd_fail;	/* EEPROM器件无应答 */
+        goto cmd_fail;	
     }
 
 
-    /* 第6步：重新启动I2C总线。下面开始读取数据 */
+
     i2c_Start();
 
-    /* 第7步：发起控制字节，高7bit是地址，bit0是读写控制位，0表示写，1表示读 */
-    i2c_SendByte(max30102_WR_address | I2C_RD);	/* 此处是读指令 */
+   
+    i2c_SendByte(max30102_WR_address | I2C_RD);	
 
-    /* 第8步：发送ACK */
+   
     if (i2c_WaitAck() != 0)
     {
-        goto cmd_fail;	/* EEPROM器件无应答 */
+        goto cmd_fail;	
     }
 
-    /* 第9步：读取数据 */
+
     {
-        *puch_data = i2c_ReadByte();	/* 读1个字节 */
+        *puch_data = i2c_ReadByte();	
 
-        i2c_NAck();	/* 最后1个字节读完后，CPU产生NACK信号(驱动SDA = 1) */
+        i2c_NAck();	
     }
-    /* 发送I2C总线停止信号 */
-    i2c_Stop();
-    return true;	/* 执行成功 返回data值 */
 
-cmd_fail: /* 命令执行失败后，切记发送停止信号，避免影响I2C总线上其他设备 */
-    /* 发送I2C总线停止信号 */
+    i2c_Stop();
+    return true;	
+
+cmd_fail: 
     i2c_Stop();
     return false;
 }
@@ -181,38 +179,36 @@ bool maxim_max30102_read_fifo(uint32_t *pun_red_led, uint32_t *pun_ir_led)
     maxim_max30102_read_reg(REG_INTR_STATUS_2, &uch_temp);
 
 
-
-    /* 第1步：发起I2C总线启动信号 */
     i2c_Start();
 
-    /* 第2步：发起控制字节，高7bit是地址，bit0是读写控制位，0表示写，1表示读 */
-    i2c_SendByte(max30102_WR_address | I2C_WR);	/* 此处是写指令 */
+  
+    i2c_SendByte(max30102_WR_address | I2C_WR);	
 
-    /* 第3步：发送ACK */
+
     if (i2c_WaitAck() != 0)
     {
        // printf("read fifo failed");
-        goto cmd_fail;	/* EEPROM器件无应答 */
+        goto cmd_fail;	
     }
 
-    /* 第4步：发送字节地址， */
+
     i2c_SendByte((uint8_t)REG_FIFO_DATA);
     if (i2c_WaitAck() != 0)
     {
-        goto cmd_fail;	/* EEPROM器件无应答 */
+        goto cmd_fail;	
     }
 
 
-    /* 第6步：重新启动I2C总线。下面开始读取数据 */
+
     i2c_Start();
 
-    /* 第7步：发起控制字节，高7bit是地址，bit0是读写控制位，0表示写，1表示读 */
-    i2c_SendByte(max30102_WR_address | I2C_RD);	/* 此处是读指令 */
+ 
+    i2c_SendByte(max30102_WR_address | I2C_RD);	
 
-    /* 第8步：发送ACK */
+
     if (i2c_WaitAck() != 0)
     {
-        goto cmd_fail;	/* EEPROM器件无应答 */
+        goto cmd_fail;	
     }
 
     un_temp = i2c_ReadByte();
@@ -241,11 +237,11 @@ bool maxim_max30102_read_fifo(uint32_t *pun_red_led, uint32_t *pun_ir_led)
     *pun_red_led &= 0x03FFFF; //Mask MSB [23:18]
     *pun_ir_led &= 0x03FFFF; //Mask MSB [23:18]
 
-    /* 发送I2C总线停止信号 */
+
     i2c_Stop();
     return true;
-cmd_fail: /* 命令执行失败后，切记发送停止信号，避免影响I2C总线上其他设备 */
-    /* 发送I2C总线停止信号 */
+cmd_fail: 
+
     i2c_Stop();
     return false;
 }
