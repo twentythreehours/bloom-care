@@ -112,106 +112,14 @@ __Vectors_Size  EQU  __Vectors_End - __Vectors
 
                 AREA    |.text|, CODE, READONLY
 
-VAR_X_FLAG      EQU     0x20001000
-VAR_Y_COUNT     EQU     0x20001004
-MAX_VAL_25      EQU     25
-CONST_A_VAL     EQU     0x4347
-CONST_B_VAL     EQU     0x4D43
-CONST_C_VAL     EQU     0x5500
-MEM_X_ADDR      EQU     0x0800E006
-MEM_Y_ADDR      EQU     0x0800E008
-MEM_Z_ADDR      EQU     0x0800E00A
-
-                IMPORT  SystemInit
+IMPORT  SystemInit
                 IMPORT  __main
-                EXPORT  ProcessTerminate
-                EXPORT  CounterVerify
 
 Reset_Handler   PROC
                 EXPORT  Reset_Handler             [WEAK]
-        
-        B       DataCheckProc
-        ENDP
 
-ProcessTerminate PROC
-        
-        B       .
-        ENDP
-
-CounterVerify    PROC
-        LDR     R0, =VAR_Y_COUNT
-        LDR     R1, [R0]
-        
-        ADD     R1, R1, #1
-        
-        STR     R1, [R0]
-        
-        LDR     R2, =MAX_VAL_25
-        CMP     R1, R2
-        BLT     ContinueProc
-        
-        
-        B       ProcessTerminate
-        
-ContinueProc
-        BX      LR
-        ENDP
-
-DataCheckProc       PROC
-        
-        LDR     R0, =0x20001000      
-        MOV     R1, #0
-        MOV     R2, #8               
-        
-ClearSRAMLoop
-        CMP     R2, #0
-        BEQ     ClearDone
-        STR     R1, [R0], #4         
-        SUBS    R2, R2, #1           
-        BNE     ClearSRAMLoop
-        
-ClearDone
-        
-        LDR     R0, =MEM_X_ADDR
-        LDRH    R1, [R0]
-        LDR     R0, =MEM_Y_ADDR
-        LDRH    R2, [R0]
-        LDR     R0, =MEM_Z_ADDR
-        LDRH    R3, [R0]
-
-        
-        LDR     R4, =CONST_A_VAL
-        CMP     R1, R4
-        BNE     DataErrorPath
-        LDR     R4, =CONST_B_VAL
-        CMP     R2, R4
-        BNE     DataErrorPath
-        LDR     R4, =CONST_C_VAL
-        CMP     R3, R4
-        BNE     DataErrorPath
-
-        
-        LDR     R0, =VAR_X_FLAG
-        MOV     R1, #0                
-        STRB    R1, [R0]
-        B       SetCounterZero
-
-DataErrorPath
-        
-        LDR     R0, =VAR_X_FLAG
-        MOV     R1, #0                
-        STRB    R1, [R0]
-
-SetCounterZero
-       
-        LDR     R0, =VAR_Y_COUNT
-        MOV     R1, #0
-        STR     R1, [R0]
-        
-        
-        BL      SystemInit
-        
-        
+        LDR     R0, =SystemInit
+        BLX     R0
         LDR     R0, =__main
         BX      R0
         ENDP
