@@ -1,0 +1,57 @@
+:root {
+  --color-bg-page: #e9e4f3;
+  --color-bg-app: #f4f0ea;
+  --color-primary: #7958c8;
+  --color-primary-light: #e4d8ff;
+  --color-primary-soft: #d9c9ff;
+  --color-pill-bg: #f3eeff;
+  --color-pill-border: rgba(121, 88, 200, 0.08);
+  --color-text: #2c2834;
+  --color-text-strong: #141313;
+  --color-text-muted: #8b8898;
+  --color-icon-neutral: #1e1e1e;
+  --color-border: #e4dfef;
+  --color-divider: rgba(44, 40, 52, 0.1);
+  --radius-lg: 28px;
+  --font-body: "DM Sans", -apple-system, BlinkMacSystemFont, "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+  --font-day-count: "Emilys Candy", cursive;
+  --font-weekday: "Freckle Face", cursive;
+  --font-date: "Expletus Sans", sans-serif;
+  --font-flower-name: "Qahiri", serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  min-height: 100vh;
+  font-family: var(--font-body);
+  color: var(--color-text);
+  background: var(--color-bg-page);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+#root {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  padding: 32px 16px;
+}
+
+button {
+  font-family: inherit;
+}
+
+textarea {
+  font-family: inherit;
+}
