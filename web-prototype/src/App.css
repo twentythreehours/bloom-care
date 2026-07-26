@@ -1,0 +1,329 @@
+/* ---------- Phone frame ---------- */
+
+.phone-frame {
+  width: 375px;
+  max-width: 100%;
+  min-height: 780px;
+  background: var(--color-bg-app);
+  border: 1px solid var(--color-border);
+  border-radius: 44px;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 26px 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.status-bar__icons {
+  letter-spacing: 2px;
+  font-size: 10px;
+  color: var(--color-text);
+}
+
+.phone-screen {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 22px 12px;
+}
+
+/* ---------- Today header ---------- */
+
+.today-header__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.day-badge {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.day-badge__bt {
+  width: 35px;
+  height: 35px;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.day-badge__count {
+  font-family: var(--font-day-count);
+  font-size: 48px;
+  letter-spacing: 1.4px;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.week-strip {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.week-strip__labels {
+  display: flex;
+  gap: 7px;
+}
+
+.week-strip__label {
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-weekday);
+  font-size: 12px;
+  color: var(--color-primary);
+}
+
+.week-strip__label--active {
+  background: var(--color-primary-light);
+}
+
+.week-strip__weather {
+  display: flex;
+  gap: 7px;
+}
+
+.week-strip__weather svg {
+  width: 20px;
+  display: flex;
+  justify-content: center;
+}
+
+.today-header__date {
+  margin-top: 14px;
+  font-family: var(--font-date);
+  font-weight: 600;
+  font-size: 11px;
+  color: var(--color-text);
+}
+
+/* ---------- Cycle ring ---------- */
+
+.ring-section {
+  display: flex;
+  justify-content: center;
+  margin: 26px 0 18px;
+}
+
+.cycle-ring {
+  position: relative;
+}
+
+.cycle-ring__svg {
+  position: absolute;
+  inset: 0;
+}
+
+.cycle-ring__center {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.flower-placeholder {
+  width: 66%;
+  height: 66%;
+  border: 1.5px dashed var(--color-primary-soft);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 12px;
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+/* ---------- Flower name / encouragement ---------- */
+
+.flower-name {
+  text-align: center;
+  font-family: var(--font-flower-name);
+  font-size: 21px;
+  letter-spacing: 0.5px;
+  color: var(--color-text);
+  margin: 0 0 8px;
+}
+
+.encouragement {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: 11.5px;
+  line-height: 1.6;
+  margin: 0 auto 20px;
+  max-width: 220px;
+}
+
+/* ---------- Stats pill ---------- */
+
+.stats-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  background: var(--color-pill-bg);
+  border: 0.8px solid var(--color-pill-border);
+  border-radius: 16px;
+  padding: 12.8px 16.8px;
+  margin-bottom: 26px;
+}
+
+.stats-pill__item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+.stats-pill__divider {
+  width: 1px;
+  height: 16px;
+  background: var(--color-divider);
+}
+
+/* ---------- Sections ---------- */
+
+.section {
+  margin-bottom: 22px;
+}
+
+.section__title {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0 0 10px;
+  color: var(--color-text-strong);
+}
+
+.journal-box {
+  width: 100%;
+  min-height: 202px;
+  resize: vertical;
+  border: none;
+  border-radius: 10px;
+  padding: 16px;
+  font-size: 14px;
+  color: var(--color-text);
+  background-color: #ffffff;
+  background-image: radial-gradient(
+    var(--color-border) 1px,
+    transparent 1.5px
+  );
+  background-size: 20px 20px;
+  background-position: 12px 12px;
+  outline: none;
+}
+
+.journal-box:focus {
+  outline: 1.5px solid var(--color-primary-soft);
+}
+
+.journal-box::placeholder {
+  color: var(--color-text-muted);
+}
+
+.mood-row {
+  display: flex;
+  gap: 17px;
+}
+
+.mood-btn {
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  transition: background-color 0.15s ease;
+}
+
+.mood-btn--active {
+  background: var(--color-primary-light);
+}
+
+/* ---------- Bottom nav ---------- */
+
+.bottom-nav {
+  display: flex;
+  border-top: 1px solid var(--color-border);
+  padding: 10px 20px 18px;
+  background: var(--color-bg-app);
+}
+
+.bottom-nav__item {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  padding: 4px 0;
+}
+
+.bottom-nav__item--active {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* ---------- Stub pages ---------- */
+
+.stub-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-height: 560px;
+  color: var(--color-text-muted);
+}
+
+.stub-page__icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: var(--color-primary-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 14px;
+}
+
+.stub-page h2 {
+  color: var(--color-text);
+  font-size: 18px;
+  margin: 0 0 6px;
+}
+
+.stub-page p {
+  font-size: 13px;
+  max-width: 220px;
+  margin: 0;
+}
