@@ -1,9 +1,9 @@
 import { HomeIcon, CalendarIcon, ProfileIcon } from "./icons";
 
 const TABS = [
-  { id: "today", label: "今天", Icon: HomeIcon },
-  { id: "calendar", label: "日历", Icon: CalendarIcon },
-  { id: "profile", label: "我的", Icon: ProfileIcon },
+  { id: "today", label: "Today", Icon: HomeIcon },
+  { id: "calendar", label: "Calendar", Icon: CalendarIcon },
+  { id: "profile", label: "Profile", Icon: ProfileIcon },
 ];
 
 export default function BottomNav({ active, onChange }) {
