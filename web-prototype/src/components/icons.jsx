@@ -150,6 +150,162 @@ export function SunIcon({ size = 13.83, color = "#1E1E1E" }) {
   );
 }
 
+export function FlowerIcon({ size = 32, color = "#7958C8", petals = 6 }) {
+  const angles = Array.from({ length: petals }, (_, i) => (360 / petals) * i);
+  return (
+    <svg width={size} height={size} viewBox="0 0 32 32">
+      {angles.map((angle) => (
+        <ellipse
+          key={angle}
+          cx="16"
+          cy="9.4"
+          rx="5.4"
+          ry="7.2"
+          fill={color}
+          opacity={0.92}
+          transform={`rotate(${angle} 16 16)`}
+        />
+      ))}
+      <circle cx="16" cy="16" r="4.2" fill="#fffcf6" />
+    </svg>
+  );
+}
+
+export function SproutIcon({ size = 20, color = "#c7c2ce" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 20 20" fill="none">
+      <path d="M10 18V9.5" stroke={color} strokeWidth={1.3} strokeLinecap="round" />
+      <path
+        d="M10 10c-.6-3.4-3.4-4.6-6-4-.2 3.4 2.4 5.6 6 4.6"
+        stroke={color}
+        strokeWidth={1.3}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function ChevronLeftIcon({ size = 16, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path
+        d="M15 5l-7 7 7 7"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function ChevronRightIcon({ size = 16, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path
+        d="M9 5l7 7-7 7"
+        stroke={color}
+        strokeWidth={2}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function BellIcon({ size = 17, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path
+        d="M6 10a6 6 0 1 1 12 0c0 3.2 1 5 2 6H4c1-1 2-2.8 2-6Z"
+        stroke={color}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path d="M10 19a2 2 0 0 0 4 0" stroke={color} strokeWidth={1.6} strokeLinecap="round" />
+    </svg>
+  );
+}
+
+export function ClockIcon({ size = 17, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.6} />
+      <path
+        d="M12 7v5l3.5 2"
+        stroke={color}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function ShieldIcon({ size = 17, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path
+        d="M12 3l7 3v6c0 4.5-3 7.5-7 9-4-1.5-7-4.5-7-9V6l7-3Z"
+        stroke={color}
+        strokeWidth={1.6}
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
+export function GlobeIcon({ size = 17, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.6} />
+      <path
+        d="M3 12h18M12 3c2.5 2.5 4 5.7 4 9s-1.5 6.5-4 9c-2.5-2.5-4-5.7-4-9s1.5-6.5 4-9Z"
+        stroke={color}
+        strokeWidth={1.6}
+      />
+    </svg>
+  );
+}
+
+export function HelpCircleIcon({ size = 17, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <circle cx="12" cy="12" r="9" stroke={color} strokeWidth={1.6} />
+      <path
+        d="M9.5 9.2a2.5 2.5 0 1 1 3.7 2.2c-.9.5-1.2 1-1.2 2"
+        stroke={color}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+      />
+      <circle cx="12" cy="17" r="1" fill={color} />
+    </svg>
+  );
+}
+
+export function LogOutIcon({ size = 16, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path
+        d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"
+        stroke={color}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M16 17l5-5-5-5M21 12H9"
+        stroke={color}
+        strokeWidth={1.6}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 const MOOD_MOUTHS = {
   down: "M9 16c1-1.5 5-1.5 6 0",
   low: "M9 15.3c1-.6 5-.6 6 0",

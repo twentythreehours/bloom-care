@@ -9,12 +9,10 @@ import {
   SunIcon,
   MoodFaceIcon,
 } from "./icons";
+import { CYCLE_DAY, CYCLE_LENGTH } from "../cycleData";
 
 const WEEK_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
 const WEEK_WEATHER = [CloudIcon, CloudIcon, RainIcon, SunIcon, SunIcon, RainIcon, RainIcon];
-
-const CYCLE_DAY = 8;
-const CYCLE_LENGTH = 28;
 
 const ENCOURAGEMENT_BY_PHASE = [
   { maxDay: 5, text: "Rest is productive too — let yourself slow down." },
