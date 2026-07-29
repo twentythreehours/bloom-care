@@ -52,10 +52,56 @@
   width: 35px;
   height: 35px;
   border-radius: 50%;
+  border: none;
+  padding: 0;
+  cursor: pointer;
   background: var(--color-primary-light);
   display: flex;
   align-items: center;
   justify-content: center;
+}
+
+.day-badge__bt--live {
+  position: relative;
+}
+
+.day-badge__bt--live::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 50%;
+  border: 1.5px solid var(--color-primary);
+  animation: bt-pulse 2s ease-out infinite;
+}
+
+@keyframes bt-pulse {
+  0% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.45);
+  }
+}
+
+.live-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #4e9a6b;
+  margin-left: 2px;
+  animation: live-dot-blink 2s ease-in-out infinite;
+}
+
+@keyframes live-dot-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.25;
+  }
 }
 
 .day-badge__count {
@@ -144,12 +190,21 @@
   width: auto;
   height: auto;
   display: flex;
+  flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 6px;
   text-align: center;
   padding: 0 8px 2px;
   font-size: 12px;
   color: var(--color-text-muted);
+}
+
+.flower-placeholder__telemetry {
+  font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  font-size: 10px;
+  color: var(--color-primary);
+  opacity: 0.75;
 }
 
 /* ---------- Flower name / encouragement ---------- */

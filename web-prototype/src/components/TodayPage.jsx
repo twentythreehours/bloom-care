@@ -1,3 +1,4 @@
+import { useState } from "react";
 import CycleRing from "./CycleRing";
 import {
   BluetoothIcon,
@@ -10,6 +11,7 @@ import {
   MoodFaceIcon,
 } from "./icons";
 import { CYCLE_DAY, CYCLE_LENGTH } from "../cycleData";
+import { useLiveSensor } from "../hooks/useLiveSensor";
 
 const WEEK_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
 const WEEK_WEATHER = [CloudIcon, CloudIcon, RainIcon, SunIcon, SunIcon, RainIcon, RainIcon];
@@ -48,14 +50,32 @@ export default function TodayPage({
   journal,
   onJournalChange,
 }) {
+  const [connected, setConnected] = useState(true);
+  const { latest, flowerParameters } = useLiveSensor(connected);
+
+  const bpmDisplay = connected ? Math.round(latest.heartbeat) : "--";
+  const glowDisplay =
+    connected && flowerParameters
+      ? Math.round(flowerParameters.saturation * 100)
+      : "--";
+
   return (
     <div className="today-page">
       <header className="today-header">
         <div className="today-header__top">
           <div className="day-badge">
-            <span className="day-badge__bt">
-              <BluetoothIcon size={15} color="var(--color-primary)" />
-            </span>
+            <button
+              type="button"
+              className={`day-badge__bt${connected ? " day-badge__bt--live" : ""}`}
+              onClick={() => setConnected((v) => !v)}
+              aria-label={connected ? "Disconnect sensor" : "Connect sensor"}
+              aria-pressed={connected}
+            >
+              <BluetoothIcon
+                size={15}
+                color={connected ? "var(--color-primary)" : "var(--color-text-muted)"}
+              />
+            </button>
             <span className="day-badge__count">
               {String(dayCount).padStart(3, "0")}
             </span>
@@ -83,7 +103,17 @@ export default function TodayPage({
 
       <div className="ring-section">
         <CycleRing cycleDay={CYCLE_DAY} cycleLength={CYCLE_LENGTH}>
-          <div className="flower-placeholder">flower placeholder</div>
+          <div className="flower-placeholder">
+            <span>flower placeholder</span>
+            {connected && flowerParameters && (
+              <span className="flower-placeholder__telemetry">
+                hue {flowerParameters.hueShiftDegrees >= 0 ? "+" : ""}
+                {flowerParameters.hueShiftDegrees.toFixed(0)}° · sat{" "}
+                {Math.round(flowerParameters.saturation * 100)}% · open{" "}
+                {Math.round(flowerParameters.petalOpenness * 100)}%
+              </span>
+            )}
+          </div>
         </CycleRing>
       </div>
 
@@ -93,7 +123,8 @@ export default function TodayPage({
       <div className="stats-pill">
         <span className="stats-pill__item">
           <HeartIcon size={13} color="var(--color-primary)" />
-          68 bpm
+          {bpmDisplay} bpm
+          {connected && <span className="live-dot" />}
         </span>
         <span className="stats-pill__divider" />
         <span className="stats-pill__item">
@@ -103,7 +134,7 @@ export default function TodayPage({
         <span className="stats-pill__divider" />
         <span className="stats-pill__item">
           <GlowIcon size={13} color="var(--color-primary)" />
-          72% glow
+          {glowDisplay}% glow
         </span>
       </div>
 
