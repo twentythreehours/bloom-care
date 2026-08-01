@@ -1,11 +1,46 @@
 export const CYCLE_DAY = 8;
 export const CYCLE_LENGTH = 28;
 
+// Colors matched to the actual flower_cycle.html art per stage (not the
+// original red/purple/yellow/pink spec) — that sketch renders ovulatory as
+// pink/salmon and luteal as yellow/gold, the opposite of the early guess.
 export const PHASES = [
-  { id: "menstrual", name: "Menstrual", color: "#D6566B", maxDay: 5 },
-  { id: "follicular", name: "Follicular", color: "#7958C8", maxDay: 13 },
-  { id: "ovulatory", name: "Ovulatory", color: "#E3B23C", maxDay: 16 },
-  { id: "luteal", name: "Luteal", color: "#D98CB3", maxDay: 28 },
+  {
+    id: "menstrual",
+    name: "Menstrual",
+    flowerName: "Rosalie Ember",
+    color: "#D6566B",
+    maxDay: 5,
+    description:
+      "Estrogen and progesterone are at their lowest as the uterine lining sheds. Energy often dips — rest is expected, not a setback.",
+  },
+  {
+    id: "follicular",
+    name: "Follicular",
+    flowerName: "Viola Lumina",
+    color: "#7958C8",
+    maxDay: 13,
+    description:
+      "Estrogen starts rising as follicles develop in the ovaries, often bringing gains in energy, mood, and skin clarity.",
+  },
+  {
+    id: "ovulatory",
+    name: "Ovulatory",
+    flowerName: "Aurora Blush",
+    color: "#D98CB3",
+    maxDay: 16,
+    description:
+      "A surge in luteinizing hormone triggers the release of an egg. Estrogen peaks, often bringing the most energy of the cycle.",
+  },
+  {
+    id: "luteal",
+    name: "Luteal",
+    flowerName: "Aurelia Gold",
+    color: "#E3B23C",
+    maxDay: 28,
+    description:
+      "Progesterone rises to prepare the uterine lining, then falls if there's no pregnancy — a shift that can bring fatigue or PMS symptoms.",
+  },
 ];
 
 export function getPhaseForCycleDay(cycleDay) {

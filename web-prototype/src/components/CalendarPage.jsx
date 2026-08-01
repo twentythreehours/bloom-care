@@ -8,6 +8,7 @@ import {
   MoonIcon,
   GlowIcon,
 } from "./icons";
+import DayDetailModal from "./DayDetailModal";
 import {
   CYCLE_DAY,
   TODAY,
@@ -38,6 +39,7 @@ export default function CalendarPage() {
   const [viewDate, setViewDate] = useState(
     new Date(TODAY.getFullYear(), TODAY.getMonth(), 1),
   );
+  const [selectedDate, setSelectedDate] = useState(null);
 
   const cells = buildMonthGrid(viewDate);
   const monthLabel = viewDate.toLocaleDateString("en-US", {
@@ -89,23 +91,38 @@ export default function CalendarPage() {
           }
           const future = isFutureDate(date);
           const phase = getPhaseForCycleDay(getCycleDayForDate(date));
-          return (
-            <div
-              key={i}
-              className={`calendar-cell${isSameDay(date, TODAY) ? " calendar-cell--today" : ""}`}
-            >
-              {future ? (
+          const isToday = isSameDay(date, TODAY);
+          const className = `calendar-cell${isToday ? " calendar-cell--today" : ""}${future ? "" : " calendar-cell--interactive"}`;
+
+          if (future) {
+            return (
+              <div key={i} className={className}>
                 <SproutIcon size={20} />
-              ) : (
-                <FlowerIcon size={30} color={phase.color} />
-              )}
+                <span className="calendar-cell__day">{date.getDate()}</span>
+              </div>
+            );
+          }
+
+          return (
+            <button
+              key={i}
+              type="button"
+              className={className}
+              onClick={() => setSelectedDate(date)}
+              aria-label={date.toDateString()}
+            >
+              <FlowerIcon size={30} color={phase.color} />
               <span className="calendar-cell__day">{date.getDate()}</span>
-            </div>
+            </button>
           );
         })}
       </div>
 
-      <div className="calendar-summary">
+      <button
+        type="button"
+        className="calendar-summary"
+        onClick={() => setSelectedDate(TODAY)}
+      >
         <div className="calendar-summary__text">
           <span className="calendar-summary__phase">
             {todayPhase.name.toUpperCase()} PHASE
@@ -124,12 +141,16 @@ export default function CalendarPage() {
             </span>
             <span>
               <GlowIcon size={12} color="var(--color-primary)" />
-              72% glow
+              72% O2
             </span>
           </div>
         </div>
         <FlowerIcon size={48} color={todayPhase.color} />
-      </div>
+      </button>
+
+      {selectedDate && (
+        <DayDetailModal date={selectedDate} onClose={() => setSelectedDate(null)} />
+      )}
     </div>
   );
 }
