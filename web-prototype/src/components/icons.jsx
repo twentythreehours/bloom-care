@@ -1,3 +1,24 @@
+export function ShareIcon({ size = 16, color = "currentColor" }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 24 24" fill="none">
+      <path
+        d="M12 15V3M12 3l-4 4M12 3l4 4"
+        stroke={color}
+        strokeWidth={1.7}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+      <path
+        d="M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-7"
+        stroke={color}
+        strokeWidth={1.7}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}
+
 export function BluetoothIcon({ size = 15, color = "#7958C8" }) {
   return (
     <svg width={size} height={size} viewBox="0 0 15 15" fill="none">

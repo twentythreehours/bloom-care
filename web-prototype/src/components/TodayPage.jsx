@@ -1,5 +1,5 @@
 import { useState } from "react";
-import CycleRing from "./CycleRing";
+import FlowerCanvas from "./FlowerCanvas";
 import {
   BluetoothIcon,
   HeartIcon,
@@ -10,18 +10,14 @@ import {
   SunIcon,
   MoodFaceIcon,
 } from "./icons";
-import { CYCLE_DAY, CYCLE_LENGTH } from "../cycleData";
+import { CYCLE_DAY, getPhaseForCycleDay } from "../cycleData";
 import { useLiveSensor } from "../hooks/useLiveSensor";
+import { FLOWER_CYCLE_SRC } from "../flowerAssets";
+
+const IDLE_SENSOR = { heartbeat: 65, spo2: 97, skinTemp: 36.5, activity: 10 };
 
 const WEEK_LABELS = ["M", "T", "W", "T", "F", "S", "S"];
 const WEEK_WEATHER = [CloudIcon, CloudIcon, RainIcon, SunIcon, SunIcon, RainIcon, RainIcon];
-
-const ENCOURAGEMENT_BY_PHASE = [
-  { maxDay: 5, text: "Rest is productive too — let yourself slow down." },
-  { maxDay: 13, text: "Your energy is rising — reach for the light." },
-  { maxDay: 16, text: "You're glowing today — let it show." },
-  { maxDay: 28, text: "Be gentle with yourself as things wind down." },
-];
 
 const MOOD_OPTIONS = [
   { id: "down", variant: "down" },
@@ -29,11 +25,6 @@ const MOOD_OPTIONS = [
   { id: "neutral", variant: "neutral" },
   { id: "happy", variant: "happy" },
 ];
-
-function getEncouragement(cycleDay) {
-  const phase = ENCOURAGEMENT_BY_PHASE.find((p) => cycleDay <= p.maxDay);
-  return phase ? phase.text : ENCOURAGEMENT_BY_PHASE[0].text;
-}
 
 const today = new Date();
 const todayIndex = (today.getDay() + 6) % 7; // Monday = 0 ... Sunday = 6
@@ -58,6 +49,16 @@ export default function TodayPage({
     connected && flowerParameters
       ? Math.round(flowerParameters.saturation * 100)
       : "--";
+
+  const phase = getPhaseForCycleDay(CYCLE_DAY);
+  const sensorInput = connected
+    ? {
+        heartbeat: latest.heartbeat,
+        spo2: latest.spo2,
+        skinTemp: latest.skin_temp,
+        activity: latest.activity,
+      }
+    : IDLE_SENSOR;
 
   return (
     <div className="today-page">
@@ -101,24 +102,23 @@ export default function TodayPage({
         <div className="today-header__date">{dateLabel}</div>
       </header>
 
-      <div className="ring-section">
-        <CycleRing cycleDay={CYCLE_DAY} cycleLength={CYCLE_LENGTH}>
-          <div className="flower-placeholder">
-            <span>flower placeholder</span>
-            {connected && flowerParameters && (
-              <span className="flower-placeholder__telemetry">
-                hue {flowerParameters.hueShiftDegrees >= 0 ? "+" : ""}
-                {flowerParameters.hueShiftDegrees.toFixed(0)}° · sat{" "}
-                {Math.round(flowerParameters.saturation * 100)}% · open{" "}
-                {Math.round(flowerParameters.petalOpenness * 100)}%
-              </span>
-            )}
-          </div>
-        </CycleRing>
+      <div className="flower-section">
+        <FlowerCanvas
+          src={FLOWER_CYCLE_SRC}
+          stage={phase.id}
+          sensor={sensorInput}
+          size={320}
+          muted={!connected}
+        />
       </div>
 
-      <h1 className="flower-name">Viola Lumina</h1>
-      <p className="encouragement">{getEncouragement(CYCLE_DAY)}</p>
+      <h1 className="flower-name">{phase.flowerName}</h1>
+      <div className="cycle-info">
+        <span className="cycle-info__label">
+          Cycle Day {CYCLE_DAY} · {phase.name} Phase
+        </span>
+        <p className="cycle-info__description">{phase.description}</p>
+      </div>
 
       <div className="stats-pill">
         <span className="stats-pill__item">
@@ -134,7 +134,7 @@ export default function TodayPage({
         <span className="stats-pill__divider" />
         <span className="stats-pill__item">
           <GlowIcon size={13} color="var(--color-primary)" />
-          {glowDisplay}% glow
+          {glowDisplay}% O2
         </span>
       </div>
 
