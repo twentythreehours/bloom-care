@@ -1,0 +1,700 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Bloom Care: Period of Flowers</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+<style>
+  html,body{margin:0;padding:0;background:#1b1b1b;display:flex;flex-direction:column;align-items:center;
+    font-family:-apple-system,"PingFang SC","Microsoft YaHei",sans-serif;color:#eee;min-height:100vh;}
+  h1{font-size:15px;font-weight:600;margin:18px 0 6px;color:#ddd;}
+  #stage-tabs{display:flex;gap:8px;margin-bottom:14px;}
+  #stage-tabs button{
+    background:#2a2a2a;border:1px solid #444;color:#ccc;border-radius:20px;
+    padding:8px 16px;font-size:13px;cursor:pointer;transition:all .15s;
+  }
+  #stage-tabs button.active{background:#f398c0;border-color:#f398c0;color:#1b1b1b;font-weight:600;}
+  #canvas-wrap{
+    background-image:
+      linear-gradient(45deg,#333 25%,transparent 25%),
+      linear-gradient(-45deg,#333 25%,transparent 25%),
+      linear-gradient(45deg,transparent 75%,#333 75%),
+      linear-gradient(-45deg,transparent 75%,#333 75%);
+    background-size:20px 20px;background-position:0 0,0 10px,10px -10px,-10px 0px;
+    background-color:#222;border-radius:8px;overflow:hidden;
+  }
+  #controls{width:600px;max-width:92vw;margin:18px 0 40px;display:grid;
+    grid-template-columns:110px 1fr 60px;row-gap:14px;column-gap:10px;align-items:center;font-size:13px;}
+  #controls label{color:#bbb;}
+  #controls input[type=range]{width:100%;accent-color:#f398c0;}
+  #controls .val{text-align:right;color:#f398c0;font-variant-numeric:tabular-nums;}
+  .hint{grid-column:1/4;font-size:11px;color:#777;margin-top:-8px;}
+</style>
+</head>
+<body>
+<h1>Four Stages of Period</h1>
+<div id="stage-tabs">
+  <button data-stage="menstrual" class="active">① Menstrual Stage</button>
+  <button data-stage="follicular">② Follicular Stage</button>
+  <button data-stage="ovulatory">③ Ovulatory Stage</button>
+  <button data-stage="luteal">④ Luteal Stage</button>
+</div>
+<div id="canvas-wrap"></div>
+
+<div id="controls">
+  <label for="hr">Heart Rate</label>
+  <input type="range" id="hr" min="40" max="160" value="70" step="1">
+  <span class="val" id="hr-val">70 bpm</span>
+
+  <label for="ox">Blood Oxygen</label>
+  <input type="range" id="ox" min="80" max="100" value="97" step="1">
+  <span class="val" id="ox-val">97</span>
+
+  <label for="temp">Skin Temperature</label>
+  <input type="range" id="temp" min="35.5" max="37.5" value="36.5" step="0.1">
+  <span class="val" id="temp-val">36.5℃</span>
+
+  <label for="act">Activity</label>
+  <input type="range" id="act" min="0" max="100" value="10" step="1">
+  <span class="val" id="act-val">10</span>
+  <div class="hint">Higher activity makes the petals rotate more noticeably toward the flower's center, gathering and shrinking closed · Heart rate drives a breathing-like micro-pulse · Blood oxygen affects saturation · Skin temperature affects hue</div>
+</div>
+
+<script>
+/* ================================================================
+   Cycle Flower · Four stages, unified activity-driven open/close engine
+   ----------------------------------------------------------------
+   This version replaces ① Menstrual and ② Follicular stages with the
+   data and folding method established in the "single-feature" demo
+   (stigma spikes/connector lines/decorations removed, petals fuller,
+   soft-glow edges). ③ Ovulatory and ④ Luteal stage petal shapes are
+   kept exactly as-is (no paths removed), but how their "activity" is
+   expressed has also been switched to the same engine: instead of
+   "heart-rate-driven breathing + whole-flower scaling", it's now
+   "activity → each petal rotates around its own pivot toward the
+   flower center, gathering and shrinking".
+
+   Two folding methods:
+   - type:'generic' (Menstrual/Ovulatory/Luteal): the petal path's
+     starting point = pivot; the farther from the flower center, the
+     more pronounced the fold. This is the "path start as pivot"
+     technique established in demos ① and ②.
+   - type:'dual' (Follicular): the four central petals grow
+     symmetrically around themselves, folded pinwheel-style using an
+     "outward-facing vector"; the remaining tendrils/vines/small
+     flowers use the generic technique.
+
+   The petal gradients for the Ovulatory/Luteal stages still use the
+   gradientTransform (matrix/translate/rotate combinations) from the
+   original AI-exported code, so bakeGradient() is kept to precisely
+   bake them into final coordinates at runtime using DOMMatrix — none
+   of the gradient data has been changed.
+   ================================================================ */
+
+// ---------- Runtime matrix baking: precisely convert gradientTransform into final coordinates ----------
+function parseSvgTransform(str) {
+  let m = new DOMMatrix();
+  const re = /(\w+)\(([^)]+)\)/g;
+  let match;
+  while ((match = re.exec(str)) !== null) {
+    const type = match[1];
+    const nums = match[2].trim().split(/[\s,]+/).map(Number);
+    if (type === 'matrix') m = m.multiply(new DOMMatrix(nums));
+    else if (type === 'translate') m = m.translate(nums[0], nums[1] || 0);
+    else if (type === 'rotate') m = m.rotate(nums[0]);
+  }
+  return m;
+}
+function bakeGradient(g) {
+  if (!g.transform) return { x1: g.x1, y1: g.y1, x2: g.x2, y2: g.y2 };
+  const m = parseSvgTransform(g.transform);
+  const p1x = m.a * g.x1 + m.c * g.y1 + m.e, p1y = m.b * g.x1 + m.d * g.y1 + m.f;
+  const p2x = m.a * g.x2 + m.c * g.y2 + m.e, p2y = m.b * g.x2 + m.d * g.y2 + m.f;
+  return { x1: p1x, y1: p1y, x2: p2x, y2: p2y };
+}
+
+// ---------- Path start point = pivot ----------
+function parsePivot(d) {
+  const m = d.match(/M\s*(-?[\d.]+)[,\s]+(-?[\d.]+)/);
+  return m ? { x: parseFloat(m[1]), y: parseFloat(m[2]) } : { x: 300, y: 300 };
+}
+
+// ---------- Generic fold: rotate around path start point + gather toward flower center + shrink ----------
+function applyPetalFoldGeneric(ctx, pivot, openness, center, plumpness, fp) {
+  const closeAmt = 1 - openness;
+  const dx = pivot.x - center.x;
+  const dy = pivot.y - center.y;
+  const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+  const pull = Math.min(1, dist / fp.distDivisor) * closeAmt;
+
+  const gatherX = -dx * pull * fp.gatherMul;
+  const gatherY = -dy * pull * fp.gatherMul;
+  const dirSign = dx >= 0 ? -1 : 1;
+  const angle = dirSign * fp.angleMul * pull;
+  const scale = (1 - fp.scaleMul * pull) * plumpness;
+
+  ctx.translate(gatherX, gatherY);
+  ctx.translate(pivot.x, pivot.y);
+  ctx.rotate(angle);
+  ctx.scale(scale, scale);
+  ctx.translate(-pivot.x, -pivot.y);
+}
+
+// ---------- Pinwheel-style fold (used for the four central petals of the Follicular stage) ----------
+function applyPetalFoldCore(ctx, outward, openness, center, plumpness) {
+  const closeAmt = 1 - openness;
+  const gatherDist = 42;
+  const gatherX = -outward.x * gatherDist * closeAmt;
+  const gatherY = -outward.y * gatherDist * closeAmt;
+  const angle = (outward.x - outward.y) * 0.65 * closeAmt;
+  const scale = (1 - 0.62 * closeAmt) * plumpness;
+
+  ctx.translate(gatherX, gatherY);
+  ctx.translate(center.x, center.y);
+  ctx.rotate(angle);
+  ctx.scale(scale, scale);
+  ctx.translate(-center.x, -center.y);
+}
+
+// ================================================================
+// Data for the four stages
+// ================================================================
+const STAGES = {};
+
+// ---------------- ① Menstrual Stage (matches the "single-feature" demo data) ----------------
+STAGES.menstrual = {
+  type: 'generic',
+  flowerCenter: { x: 300, y: 300 },
+  plumpness: 1.16,
+  fold: { distDivisor: 170, gatherMul: 0.8, angleMul: 1.5, scaleMul: 0.72 },
+  softGlow: 'rgba(255,230,240,0.55)',
+  stops: {
+    A: [[0,'#cb1c68'],[0.01,'#d23a7c'],[0.03,'#dc6097'],[0.06,'#e482ad'],[0.08,'#eb9dc0'],
+        [0.11,'#f0b2ce'],[0.14,'#f4c1d8'],[0.17,'#f6c9de'],[0.22,'#f7cce0'],[0.31,'#f6c3da'],
+        [0.46,'#f4abcc'],[0.55,'#f398c0'],[0.89,'#ef6596'],[1,'#ef5b7f']]
+  },
+  center: [
+    { d:"M343.25,236c-3.48,87.83-84.94,82.55-86.74,0C260,148.2,341.44,153.48,343.25,236Z",
+      stop:'A', grad:{x1:299.88,y1:299.94,x2:299.88,y2:172.12}, opacity:0.9 }
+  ],
+  mirror: [
+    { d:"M301.79,246.43c13.59,151.28-147.63-63.39-48.7-55.08C286.77,192.67,300.86,216.13,301.79,246.43Z",
+      stop:'A', grad:{x1:261.71,y1:300.57,x2:261.71,y2:191.11}, opacity:0.9 },
+    { d:"M221.83,274.92c29.12,18,93.09,15.84,74.73,25.81-24.23,13.16-70.28,7.57-77,7-39.31-3.3-58.89-12.72-92.81-49.28C102.65,232.51,194.09,257.77,221.83,274.92Z",
+      stop:'A', grad:{x1:275.39,y1:327.89,x2:138.78,y2:227.14}, opacity:0.9 },
+    { d:"M366.91,316.22C341.64,303.13,286,306,303.24,295.91c22.74-13.36,65.45-5.74,71.39-5.54,34.5,1.15,36.81-6,84.45,5.34C470.33,298.38,391.5,329,366.91,316.22Z",
+      stop:'A', grad:{x1:332.95,y1:259.12,x2:430.90,y2:335.98}, opacity:0.9 },
+    { d:"M160.68,381.18c-24.53-49-33.4,52.91-.83,22.65C164.54,399.66,166.08,390,160.68,381.18Z",
+      stop:'A', grad:{x1:138.94,y1:371.73,x2:159.24,y2:404.29}, opacity:0.9 },
+    { d:"M164.9,375.15c-39.37-4.45-1.81-29.23,17.65-25.46C196.7,354.51,182.73,381.06,164.9,375.15Z",
+      stop:'A', grad:{x1:149.37,y1:357.49,x2:187.07,y2:365.40}, opacity:0.9 },
+    { d:"M152.74,389.78c-20.65-16-2.46-38.17,17.47-25C190.86,380.78,172.68,402.94,152.74,389.78Z",
+      stop:'A', grad:{x1:146.12,y1:366.60,x2:176.81,y2:388.07}, opacity:0.9 }
+  ]
+};
+
+// ---------------- ② Follicular Stage (matches the "full version, spikes removed" demo data) ----------------
+STAGES.follicular = {
+  type: 'dual',
+  flowerCenter: { x: 300, y: 272.6 },
+  plumpness: 1.1,
+  fold: { distDivisor: 170, gatherMul: 0.8, angleMul: 1.4, scaleMul: 0.68 },
+  softGlow: 'rgba(240,225,255,0.55)',
+  flatStops: [
+    [0,'#60f'],[0.02,'#8733f9'],[0.04,'#a460f3'],[0.06,'#be88ef'],[0.08,'#d3a8eb'],
+    [0.1,'#e3c0e8'],[0.12,'#eed2e6'],[0.15,'#f5dde4'],[0.18,'#f7e0e4'],[0.35,'#dad1ed'],
+    [0.45,'#d0cbf0'],[0.55,'#cec6f1'],[0.66,'#c6b9f3'],[0.78,'#baa3f6'],[0.9,'#a984fb'],[1,'#96f']
+  ],
+  corePetals: [
+    { d:"M324.55,237.23c-3.83,20.27-21.7,36.32-24.57,36.36-3.1.05-19.82-15-24.58-36.36-4.38-19.61,11-36.37,24.58-36.37S328.28,217.49,324.55,237.23Z",
+      grad:{x1:299.89,y1:273.59,x2:299.89,y2:200.86}, outward:{x:0,y:-1} },
+    { d:"M324.55,307.23C320.72,287,302.85,270.9,300,270.86c-3.1,0-19.82,15.05-24.58,36.37-4.38,19.6,11,36.36,24.58,36.36S328.28,327,324.55,307.23Z",
+      grad:{x1:299.89,y1:270.86,x2:299.89,y2:343.59}, outward:{x:0,y:1} },
+    { d:"M264.89,247.56c20.28,3.84,36.33,21.71,36.37,24.58,0,3.1-15.05,19.81-36.37,24.58-19.6,4.37-36.37-11-36.37-24.58S245.15,243.83,264.89,247.56Z",
+      grad:{x1:301.26,y1:272.23,x2:228.52,y2:272.23}, outward:{x:-1,y:0} },
+    { d:"M334.89,247.56c-20.28,3.84-36.33,21.71-36.37,24.58,0,3.1,15.05,19.81,36.37,24.58,19.6,4.37,36.37-11,36.37-24.58S354.62,243.83,334.89,247.56Z",
+      grad:{x1:298.52,y1:272.23,x2:371.26,y2:272.23}, outward:{x:1,y:0} }
+  ],
+  mirror: [
+    { d:"M266,242l-4.18-27.45c-1.42-9.15-2.85-18.28-4.38-27.4s-3.12-18.23-4.91-27.27c-.9-4.52-1.87-9-3-13.47-.55-2.23-1.21-4.41-1.73-6.62s-.93-4.42-1.46-6.65l.85-.53a16.83,16.83,0,0,1,1.25,1.4q.53.75,1,1.53a24.68,24.68,0,0,1,1.56,3.24,54.37,54.37,0,0,1,2,6.76c1.12,4.54,2.09,9.1,3,13.66,1.78,9.13,3.22,18.29,4.58,27.46s2.53,18.37,3.61,27.57c.54,4.6,1,9.21,1.51,13.82s.95,9.22,1.34,13.83Z",
+      grad:{x1:232.67,y1:180.88,x2:281.13,y2:193.86}, opacity:0.5 },
+    { d:"M353.83,279.44a168.58,168.58,0,0,1,33-29.61,148.39,148.39,0,0,1,40.07-19.28l5.41-1.44,2.7-.71c.91-.24,1.83-.38,2.74-.57l5.49-1.09c1.84-.37,3.65-.62,5.49-.92a171.34,171.34,0,0,1,22.25-2.3,79.24,79.24,0,0,1,22.52,2.31A52.25,52.25,0,0,1,504.22,230a46.11,46.11,0,0,1,9.54,6.65,44.1,44.1,0,0,1,12.35,19.58A65.63,65.63,0,0,1,528.77,279a93.67,93.67,0,0,1-3.89,22.51A82.85,82.85,0,0,1,515,322.24a105.15,105.15,0,0,1-14.5,17.64,141.5,141.5,0,0,1-17.42,14.58,179,179,0,0,1-19.24,11.92c-1.65.92-3.32,1.8-5,2.68a50.76,50.76,0,0,1-5.14,2.36,39,39,0,0,1-5.46,1.63,9.25,9.25,0,0,1-6.41-1l-.11-.3a10.15,10.15,0,0,1,3.9-5c1.54-1,3.11-1.92,4.71-2.77,3.2-1.67,6.57-3,9.79-4.65a172.31,172.31,0,0,0,18.64-11,133.45,133.45,0,0,0,16.83-13.46,98.6,98.6,0,0,0,13.94-16.22,76.51,76.51,0,0,0,9.54-19,87.91,87.91,0,0,0,4.08-21,60.43,60.43,0,0,0-1.95-21A39.23,39.23,0,0,0,510.61,240a41.25,41.25,0,0,0-8.46-6.17,48.47,48.47,0,0,0-9.8-4A75.88,75.88,0,0,0,471,227.18,167.75,167.75,0,0,0,449.15,229c-1.81.26-3.67.47-5.46.8l-5.4.94c-.89.17-1.8.29-2.69.5l-2.66.64-5.34,1.29a147.53,147.53,0,0,0-40,18,167.55,167.55,0,0,0-33.56,28.55Z",
+      grad:{x1:350.95,y1:298.36,x2:530.11,y2:298.36}, opacity:0.5 },
+    { d:"M155.69,341.55c6.14,11.09,4,25.68,2.63,26.82s-15.26.66-25.87-7.56c-9.75-7.55-9-21.5-2.64-26.83S149.72,330.75,155.69,341.55Z",
+      grad:{x1:158.28,y1:368.42,x2:129.77,y2:334.03}, opacity:0.9 },
+    { d:"M183.13,374.64c-9.76-8.08-24.5-8.67-25.88-7.56s-3.47,14.88,2.64,26.83c5.61,11,19.46,12.88,25.87,7.56S192.63,382.51,183.13,374.64Z",
+      grad:{x1:157.16,y1:366.84,x2:185.75,y2:401.24}, opacity:0.9 },
+    { d:"M131.53,369.82c11.09-6.14,25.68-4,26.83-2.64s.65,15.27-7.56,25.88c-7.55,9.75-21.51,9.05-26.83,2.64S120.74,375.79,131.53,369.82Z",
+      grad:{x1:158.11,y1:367.03,x2:123.72,y2:395.62}, opacity:0.9 },
+    { d:"M164.63,342.38c-8.09,9.76-8.67,24.5-7.56,25.88s14.88,3.47,26.83-2.64c11-5.61,12.88-19.46,7.56-25.87S172.5,332.88,164.63,342.38Z",
+      grad:{x1:156.74,y1:368.82,x2:191.14,y2:340.23}, opacity:0.9 },
+    { d:"M204.17,174.61c2.1,17.36-8.21,34.9-10.52,35.67-2.49.83-19.87-7.07-29.18-23.07C155.91,172.51,164,155,175,151.54S202.12,157.71,204.17,174.61Z",
+      grad:{x1:193.58,y1:210.29,x2:174.93,y2:151.55}, opacity:0.9 },
+    { d:"M222.12,231.14c-8.3-15.39-26.84-23.77-29.18-23.07-2.51.76-12.14,17.24-10.52,35.68,1.49,16.95,18.21,26.54,29.18,23.06S230.19,246.12,222.12,231.14Z",
+      grad:{x1:192.81,y1:209.21,x2:211.30,y2:267.76}, opacity:0.9 },
+    { d:"M158.63,198.26c17.37-2.11,34.91,8.21,35.68,10.52.83,2.49-7.07,19.86-23.07,29.17-14.71,8.57-32.19.44-35.67-10.52S141.74,200.3,158.63,198.26Z",
+      grad:{x1:194.31,y1:208.85,x2:135.57,y2:227.51}, opacity:0.9 },
+    { d:"M215.17,180.31c-15.4,8.29-23.77,26.84-23.07,29.17.76,2.51,17.23,12.14,35.67,10.52,16.95-1.49,26.55-18.21,23.07-29.17S230.15,172.23,215.17,180.31Z",
+      grad:{x1:193.88,y1:209.83,x2:252.43,y2:191.34}, opacity:0.9 },
+    { d:"M254.29,102.76c-7.48,12.06-5.88,28.5-4.44,29.85s17,1.58,29.36-7c11.32-7.91,11.32-23.55,4.44-29.86S261.57,91,254.29,102.76Z",
+      grad:{x1:247.30,y1:131.60,x2:281.31,y2:94.59}, opacity:0.9 },
+    { d:"M221.76,138.25c11.37-8.5,27.88-8.34,29.36-7s3,16.84-4.44,29.86c-6.89,12-22.48,13.32-29.36,7S210.7,146.52,221.76,138.25Z",
+      grad:{x1:251.19,y1:131.25,x2:217.39,y2:168.13}, opacity:0.9 },
+    { d:"M279.73,135.72c-12.06-7.48-28.5-5.88-29.86-4.44s-1.57,17,7,29.36c7.9,11.33,23.55,11.32,29.86,4.44S291.47,143,279.73,135.72Z",
+      grad:{x1:249.75,y1:129.02,x2:286.77,y2:163.04}, opacity:0.9 },
+    { d:"M244.24,103.19c8.5,11.37,8.33,27.89,7,29.36s-16.84,3.06-29.86-4.44c-12-6.88-13.32-22.47-7-29.35S236,92.13,244.24,103.19Z",
+      grad:{x1:251.23,y1:132.60,x2:214.36,y2:98.80}, opacity:0.9 }
+  ]
+};
+
+// ---------------- ③ Ovulatory Stage (petal shapes kept exactly as-is, only the open/close engine changed) ----------------
+STAGES.ovulatory = {
+  type: 'generic',
+  flowerCenter: { x: 300, y: 300 },
+  plumpness: 1.0,
+  fold: { distDivisor: 170, gatherMul: 0.8, angleMul: 1.5, scaleMul: 0.72 },
+  softGlow: 'rgba(255,255,255,0.45)',
+  stops: {
+    D: [[0,'#f69'],[0.02,'#fd88ae'],[0.05,'#fba8c1'],[0.08,'#f9c1d1'],[0.11,'#f8d2db'],[0.14,'#f7dde2'],
+        [0.18,'#f7e0e4'],[0.37,'#fcd5d6'],[0.57,'#fcc'],[0.64,'#ffc1cc'],[0.87,'#ffa4cc'],[1,'#f9c']],
+    E: [[0.08,'#f7e0e4'],[0.28,'#f3d7db'],[0.62,'#e9bfc3'],[1,'#da9ca0']],
+    F: [[0.22,'#fcc'],[0.31,'#f9c4c5'],[0.69,'#e2a7aa'],[0.9,'#da9ca0']]
+  },
+  center: [
+    { d:"M300.39,313.64a13.27,13.27,0,0,1,4,3.93,10.19,10.19,0,0,1,1.53,3.93,28.67,28.67,0,0,1,.11,3.93v3.93l0,15.72-.18,31.44c-.21,21-.42,41.91-.91,62.87l-.69,31.44-.95,31.43c-.79,21-1.53,41.92-2.83,62.88h-.78c-1.3-21-2-41.92-2.83-62.88l-.95-31.43-.69-31.44c-.49-21-.7-41.92-.91-62.87l-.18-31.44,0-15.72v-3.93a28.67,28.67,0,0,1,.11-3.93,10.19,10.19,0,0,1,1.53-3.93,13.27,13.27,0,0,1,4-3.93Z",
+      stop:'E', grad:{x1:300,y1:565.14,x2:300,y2:313.64}, opacity:0.5 },
+    { d:"M319.41,291.6c-3,17-17.08,30.38-19.34,30.42-2.44,0-15.6-12.59-19.34-30.42C277.28,275.21,289.32,266,300,266S322.34,275.1,319.41,291.6Z",
+      stop:'F', grad:{x1:300,y1:322.02,x2:300,y2:265.97}, opacity:0.9 }
+  ],
+  mirror: [
+    { d:"M307.09,206c5,33.92-5.27,65-8,65.86-3,.95-25.55-18.72-39.3-51.89-12.65-30.48-5-62,8-65.85S302.2,173,307.09,206Z",
+      stop:'D', grad:{x1:285.1,y1:267.66,x2:285.1,y2:145.84,transform:"translate(-46.81 90.79) rotate(-15.64)"}, opacity:0.72 },
+    { d:"M245.93,279.65a167.55,167.55,0,0,0-33.56-28.55,147.53,147.53,0,0,0-40-18l-5.34-1.29-2.66-.64c-.89-.21-1.8-.33-2.69-.5l-5.4-.94c-1.79-.33-3.65-.54-5.46-.8A167.75,167.75,0,0,0,129,227.18a75.88,75.88,0,0,0-21.36,2.64,48.47,48.47,0,0,0-9.8,4A41.25,41.25,0,0,0,89.39,240a39.23,39.23,0,0,0-10.62,17.69,60.43,60.43,0,0,0-2,21,87.91,87.91,0,0,0,4.08,21,76.51,76.51,0,0,0,9.54,19,98.6,98.6,0,0,0,13.94,16.22,133.45,133.45,0,0,0,16.83,13.46,172.31,172.31,0,0,0,18.64,11c3.22,1.65,6.59,3,9.79,4.65,1.6.85,3.17,1.76,4.71,2.77a10.15,10.15,0,0,1,3.9,5l-.11.3a9.25,9.25,0,0,1-6.41,1,39,39,0,0,1-5.46-1.63,50.76,50.76,0,0,1-5.14-2.36c-1.67-.88-3.34-1.76-5-2.68a179,179,0,0,1-19.24-11.92,141.5,141.5,0,0,1-17.42-14.58A105.15,105.15,0,0,1,85,322.24a82.85,82.85,0,0,1-9.86-20.72A93.67,93.67,0,0,1,71.23,279a65.63,65.63,0,0,1,2.66-22.83A44.1,44.1,0,0,1,86.24,236.6,46.11,46.11,0,0,1,95.78,230a52.25,52.25,0,0,1,10.76-4.12,79.24,79.24,0,0,1,22.52-2.31,171.34,171.34,0,0,1,22.25,2.3c1.84.3,3.65.55,5.49.92l5.49,1.09c.91.19,1.83.33,2.74.57l2.7.71,5.41,1.44a148.39,148.39,0,0,1,40.07,19.28,168.58,168.58,0,0,1,33,29.61Z",
+      stop:'E', grad:{x1:249.05,y1:298.36,x2:69.89,y2:298.36}, opacity:0.5 },
+    { d:"M262.71,289.43c15-14.48,34-19.66,35.43-18.47s-.28,20.32-11.86,39.26c-10.64,17.41-28.91,24.21-35.42,18.47S248.09,303.52,262.71,289.43Z",
+      stop:'D', grad:{x1:204.47,y1:290.63,x2:204.47,y2:216.02,transform:"translate(266.38 625.38) rotate(-139.64)"}, opacity:0.72 },
+    { d:"M267.7,297.11c18.56-9,30.31-25.37,29.78-27.17s-18.26-7.34-39.52-3.3c-19.54,3.71-32.47,18.75-29.78,27.16S249.64,305.89,267.7,297.11Z",
+      stop:'D', grad:{x1:340.79,y1:328.47,x2:340.79,y2:255.18,transform:"matrix(0.31, 0.95, 0.95, -0.31, -121.44, 50.31)"}, opacity:0.72 },
+    { d:"M245.38,234.11c31.32,8.94,53.75,30.65,53.35,33.5-.42,3.07-26.85,15.74-61.18,15C206,282,182,262.53,184.21,249.13S214.9,225.41,245.38,234.11Z",
+      stop:'D', grad:{x1:226.91,y1:236.61,x2:226.91,y2:120.6,transform:"translate(28.98 454.02) rotate(-80.83)"}, opacity:0.72 },
+    { d:"M239.43,247c27.1,18.07,58.17,21.08,60.09,18.93,2.06-2.31-5.41-30.65-28.19-56.33-20.95-23.62-51.28-29.27-60.09-18.94S213.06,229.4,239.43,247Z",
+      stop:'D', grad:{x1:349.17,y1:270.85,x2:349.17,y2:154.84,transform:"matrix(-0.65, 0.76, 0.76, 0.65, 320.04, -175.58)"}, opacity:0.72 },
+    { d:"M129.47,329.84c9.68,16.92,10.65,35.49,9.38,36.52s-17.4-4.62-31.54-19.33c-13-13.52-15.5-31.77-9.38-36.52S120.05,313.39,129.47,329.84Z",
+      stop:'D', grad:{x1:104.52,y1:313.55,x2:104.52,y2:244.32,transform:"matrix(0.8, -0.6, 0.6, 0.8, -132.91, 178.52)"}, opacity:0.72 },
+    { d:"M122,332.78c4.36,19,16.24,33.3,17.88,33.2s9.65-15.2,10.07-35.6c.38-18.75-10.16-33.86-17.88-33.2S117.73,314.29,122,332.78Z",
+      stop:'D', grad:{x1:415.67,y1:400.68,x2:415.67,y2:331.45,transform:"matrix(-1, 0.1, 0.1, 1, 513.12, -73.99)"}, opacity:0.72 },
+    { d:"M123.23,383.16c5-10.76,13.94-17.44,14.93-17.1s4.06,10.81,1.85,23.23c-2,11.42-10.3,18.8-14.93,17.11S118.41,393.65,123.23,383.16Z",
+      stop:'D', grad:{x1:266.98,y1:115.52,x2:266.98,y2:73.12,transform:"translate(353.41 562.41) rotate(-160.99)"}, opacity:0.72 },
+    { d:"M127.46,386.2c8-8.62,10.8-19.7,10.15-20.54s-11.19-.11-21.61,6.42c-9.57,6-13.3,16.65-10.14,20.54S119.72,394.58,127.46,386.2Z",
+      stop:'D', grad:{x1:378.94,y1:146.68,x2:378.94,y2:105.03,transform:"matrix(0.64, 0.77, 0.77, -0.64, -217.16, 167.99)"}, opacity:0.72 },
+    { d:"M162.71,367.74c-11-4.56-22.08-3.37-22.58-2.45s4.36,10.7,14.4,18.33c9.23,7,20.32,6.83,22.57,2.44S173.36,372.17,162.71,367.74Z",
+      stop:'D', grad:{x1:20.77,y1:324.77,x2:20.77,y2:282.37,transform:"matrix(0.47, -0.88, -0.88, -0.47, 416.03, 537.93)"}, opacity:0.72 },
+    { d:"M161.65,372.83c-11.69-.94-21.29-7.15-21.38-8.21s8.15-7.67,20.23-9.93c11.12-2.08,21.07,3.21,21.39,8.22S173,373.75,161.65,372.83Z",
+      stop:'D', grad:{x1:480.68,y1:453.36,x2:480.68,y2:411.71,transform:"translate(567.89 -138.87) rotate(87)"}, opacity:0.72 },
+    { d:"M102.62,357.47c18.42-1.75,34.78,5.11,35.16,6.7s-11,13.88-29.27,20.6c-16.84,6.18-33.54.85-35.17-6.69S84.69,359.17,102.62,357.47Z",
+      stop:'D', grad:{x1:107.88,y1:92.73,x2:107.88,y2:26.81,transform:"translate(69.92 489.23) rotate(-102.18)"}, opacity:0.72 },
+    { d:"M102.13,365.51c18.08,4,35.15-.87,35.72-2.41s-9.2-15.1-26.58-24c-16-8.17-33.19-4.88-35.71,2.41S84.53,361.66,102.13,365.51Z",
+      stop:'D', grad:{x1:526.47,y1:209.95,x2:526.47,y2:144.03,transform:"matrix(-0.33, 0.94, 0.94, 0.33, 111.8, -203.13)"}, opacity:0.72 },
+    { d:"M160.53,334.83c-14.73,11.22-22.11,27.35-21.31,28.77s17.47,2.78,35.49-4.7c16.57-6.88,25.22-22.13,21.3-28.77S174.86,323.92,160.53,334.83Z",
+      stop:'D', grad:{x1:159.34,y1:411.62,x2:159.34,y2:345.7,transform:"matrix(-0.51, -0.86, -0.86, 0.51, 574.76, 291.9)"}, opacity:0.72 },
+    { d:"M166.34,340.42c-10.61,15.17-26.43,23.19-27.88,22.45s-3.48-17.34,3.26-35.65c6.2-16.84,21.09-26.1,27.88-22.45S176.66,325.65,166.34,340.42Z",
+      stop:'D', grad:{x1:316.88,y1:455.74,x2:316.88,y2:389.81,transform:"translate(74.46 -188.54) rotate(28.2)"}, opacity:0.72 }
+  ]
+};
+
+// ---------------- ④ Luteal Stage (petal shapes kept exactly as-is, only the open/close engine changed) ----------------
+STAGES.luteal = {
+  type: 'generic',
+  flowerCenter: { x: 300, y: 300 },
+  plumpness: 1.0,
+  fold: { distDivisor: 170, gatherMul: 0.8, angleMul: 1.5, scaleMul: 0.72 },
+  softGlow: 'rgba(255,240,200,0.5)',
+  stops: {
+    G: [[0.08,'#f7e0e4'],[0.16,'#f5dddb'],[0.3,'#f1d6c3'],[0.48,'#e9c99b'],[0.68,'#dfb864'],[0.91,'#d2a21e'],[1,'#c90']],
+    H: [[0,'#fc6'],[0.07,'#ffdc86'],[0.16,'#ffeba4'],[0.24,'#fff6ba'],[0.32,'#fffdc8'],[0.39,'#ffc'],
+        [0.45,'#fff5b9'],[0.62,'#ffdf8c'],[0.74,'#ffd170'],[0.82,'#fc6']]
+  },
+  center: [
+    { d:"M300.39,293.64a13.27,13.27,0,0,1,4,3.93,10.19,10.19,0,0,1,1.53,3.93,28.67,28.67,0,0,1,.11,3.93v3.93l0,15.72-.18,31.44c-.21,21-.42,41.91-.91,62.87l-.69,31.44-.95,31.43c-.79,21-1.53,41.92-2.83,62.88h-.78c-1.3-21-2-41.92-2.83-62.88l-.95-31.43-.69-31.44c-.49-21-.7-41.92-.91-62.87l-.18-31.44,0-15.72v-3.93a28.67,28.67,0,0,1,.11-3.93,10.19,10.19,0,0,1,1.53-3.93,13.27,13.27,0,0,1,4-3.93Z",
+      stop:'G', grad:{x1:300,y1:545.14,x2:300,y2:293.64}, opacity:0.5 }
+  ],
+  mirror: [
+    { d:"M245.93,279.65a167.55,167.55,0,0,0-33.56-28.55,147.53,147.53,0,0,0-40-18l-5.34-1.29-2.66-.64c-.89-.21-1.8-.33-2.69-.5l-5.4-.94c-1.79-.33-3.65-.54-5.46-.8A167.75,167.75,0,0,0,129,227.18a75.88,75.88,0,0,0-21.36,2.64,48.47,48.47,0,0,0-9.8,4A41.25,41.25,0,0,0,89.39,240a39.23,39.23,0,0,0-10.62,17.69,60.43,60.43,0,0,0-2,21,87.91,87.91,0,0,0,4.08,21,76.51,76.51,0,0,0,9.54,19,98.6,98.6,0,0,0,13.94,16.22,133.45,133.45,0,0,0,16.83,13.46,172.31,172.31,0,0,0,18.64,11c3.22,1.65,6.59,3,9.79,4.65,1.6.85,3.17,1.76,4.71,2.77a10.15,10.15,0,0,1,3.9,5l-.11.3a9.25,9.25,0,0,1-6.41,1,39,39,0,0,1-5.46-1.63,50.76,50.76,0,0,1-5.14-2.36c-1.67-.88-3.34-1.76-5-2.68a179,179,0,0,1-19.24-11.92,141.5,141.5,0,0,1-17.42-14.58A105.15,105.15,0,0,1,85,322.24a82.85,82.85,0,0,1-9.86-20.72A93.67,93.67,0,0,1,71.23,279a65.63,65.63,0,0,1,2.66-22.83A44.1,44.1,0,0,1,86.24,236.6,46.11,46.11,0,0,1,95.78,230a52.25,52.25,0,0,1,10.76-4.12,79.24,79.24,0,0,1,22.52-2.31,171.34,171.34,0,0,1,22.25,2.3c1.84.3,3.65.55,5.49.92l5.49,1.09c.91.19,1.83.33,2.74.57l2.7.71,5.41,1.44a148.39,148.39,0,0,1,40.07,19.28,168.58,168.58,0,0,1,33,29.61Z",
+      stop:'G', grad:{x1:249.05,y1:298.36,x2:69.89,y2:298.36}, opacity:0.5 },
+    { d:"M307.09,280.05c5-33.92-5.27-65-8-65.86-3-.95-25.55,18.73-39.3,51.89-12.65,30.49-5,62,8,65.86S302.2,313.06,307.09,280.05Z",
+      stop:'H', grad:{x1:266.23,y1:335.07,x2:266.23,y2:213.24,transform:"matrix(0.96, 0.27, 0.27, -0.96, -46.81, 465.29)"}, opacity:0.72 },
+    { d:"M239.43,239.11C266.53,221,297.6,218,299.52,220.17c2.06,2.31-5.41,30.65-28.19,56.34-20.95,23.62-51.28,29.26-60.09,18.93S213.06,256.69,239.43,239.11Z",
+      stop:'H', grad:{x1:402.44,y1:316.26,x2:402.44,y2:200.26,transform:"translate(320.04 731.67) rotate(-130.46)"}, opacity:0.72 },
+    { d:"M307.09,177c5,33.92-5.27,65-8,65.86-3,1-25.55-18.72-39.3-51.89-12.65-30.48-5-62,8-65.85S302.2,144,307.09,177Z",
+      stop:'H', grad:{x1:292.92,y1:239.73,x2:292.92,y2:117.91,transform:"translate(-46.81 90.79) rotate(-15.64)"}, opacity:0.72 },
+    { d:"M245.38,205.11c31.32,8.94,53.75,30.65,53.35,33.5-.42,3.07-26.85,15.74-61.18,15C206,253,182,233.53,184.21,220.13S214.9,196.41,245.38,205.11Z",
+      stop:'H', grad:{x1:255.54,y1:231.99,x2:255.54,y2:115.98,transform:"translate(28.98 454.02) rotate(-80.83)"}, opacity:0.72 },
+    { d:"M239.43,218c27.1,18.07,58.17,21.08,60.09,18.93,2.06-2.31-5.41-30.65-28.19-56.33-20.95-23.62-51.28-29.27-60.09-18.94S213.06,200.4,239.43,218Z",
+      stop:'H', grad:{x1:327.11,y1:252.03,x2:327.11,y2:136.02,transform:"matrix(-0.65, 0.76, 0.76, 0.65, 320.04, -175.58)"}, opacity:0.72 },
+    { d:"M123.41,379c2.83-19.09-3-36.57-4.52-37.06s-14.38,10.54-22.12,29.2c-7.12,17.15-2.84,34.89,4.52,37.06S120.65,397.53,123.41,379Z",
+      stop:'H', grad:{x1:126.78,y1:163.51,x2:126.78,y2:94.95}, opacity:0.72 },
+    { d:"M115.43,379c-2.83-19.09,3-36.57,4.51-37.06s14.38,10.54,22.12,29.2c7.12,17.15,2.84,34.89-4.51,37.06S118.18,397.53,115.43,379Z",
+      stop:'H', grad:{x1:474.57,y1:260.9,x2:474.57,y2:192.34,transform:"translate(646.81 465.29) rotate(164.36)"}, opacity:0.72 },
+    { d:"M85.33,355.92c15.25-10.17,32.74-11.87,33.81-10.66s-3,17.25-15.86,31.7c-11.79,13.29-28.85,16.47-33.81,10.66S70.49,365.81,85.33,355.92Z",
+      stop:'H', grad:{x1:424.33,y1:97.85,x2:424.33,y2:32.57,transform:"translate(320.04 731.67) rotate(-130.46)"}, opacity:0.72 },
+    { d:"M153.6,355.92c-15.25-10.17-32.73-11.87-33.81-10.66s3,17.25,15.86,31.7c11.79,13.29,28.86,16.47,33.81,10.66S168.44,365.81,153.6,355.92Z",
+      stop:'H', grad:{x1:190.05,y1:372.59,x2:190.05,y2:307.31,transform:"matrix(0.65, -0.76, -0.76, -0.65, 279.96, 731.67)"}, opacity:0.72 },
+    { d:"M123.41,321c2.83,19.08-3,36.56-4.52,37.06s-14.38-10.54-22.12-29.2c-7.12-17.16-2.84-34.89,4.52-37.06S120.65,302.41,123.41,321Z",
+      stop:'H', grad:{x1:87.99,y1:302.04,x2:87.99,y2:233.48,transform:"translate(-46.81 90.79) rotate(-15.64)"}, opacity:0.72 },
+    { d:"M115.43,321c-2.83,19.08,3,36.56,4.51,37.06s14.38-10.54,22.12-29.2c7.12-17.16,2.84-34.89-4.51-37.06S118.18,302.41,115.43,321Z",
+      stop:'H', grad:{x1:435.78,y1:399.43,x2:435.78,y2:330.87,transform:"matrix(-0.96, -0.27, -0.27, 0.96, 646.81, 90.79)"}, opacity:0.72 },
+    { d:"M88.68,336.78c17.63,5,30.24,17.26,30,18.86s-15.11,8.86-34.42,8.45c-17.77-.37-31.24-11.31-30-18.85S71.53,331.89,88.68,336.78Z",
+      stop:'H', grad:{x1:111.37,y1:72.9,x2:111.37,y2:7.62,transform:"translate(28.98 454.02) rotate(-80.83)"}, opacity:0.72 },
+    { d:"M85.33,344c15.25,10.17,32.74,11.86,33.81,10.65s-3-17.24-15.86-31.7c-11.79-13.29-28.85-16.47-33.81-10.66S70.49,334.13,85.33,344Z",
+      stop:'H', grad:{x1:533.79,y1:191.19,x2:533.79,y2:125.91,transform:"matrix(-0.65, 0.76, 0.76, 0.65, 320.04, -175.58)"}, opacity:0.72 },
+    { d:"M150.25,336.78c-17.62,5-30.24,17.26-30,18.86s15.11,8.86,34.43,8.45c17.76-.37,31.24-11.31,30-18.85S167.4,331.89,150.25,336.78Z",
+      stop:'H', grad:{x1:168.89,y1:429.36,x2:168.89,y2:364.08,transform:"matrix(-0.16, -0.99, -0.99, 0.16, 571.02, 454.02)"}, opacity:0.72 },
+    { d:"M153.6,344c-15.25,10.17-32.73,11.86-33.81,10.65s3-17.24,15.86-31.7c11.79-13.29,28.86-16.47,33.81-10.66S168.44,334.13,153.6,344Z",
+      stop:'H', grad:{x1:299.51,y1:465.94,x2:299.51,y2:400.65,transform:"matrix(0.65, 0.76, -0.76, 0.65, 279.96, -175.58)"}, opacity:0.72 }
+  ]
+};
+
+// ================================================================
+// Generic rendering engine
+// ================================================================
+let sketch = function (p) {
+  let heartbeat = 70, bloodOxygen = 97, skinTemp = 36.5, activity = 10;
+  let currentStage = 'menstrual';
+
+  function fillWithGradient(ctx, path2d, stopArr, gradRaw, opacity, glowColor) {
+    const g = bakeGradient(gradRaw);
+    ctx.save();
+    ctx.globalAlpha = opacity;
+    if (glowColor) { ctx.shadowColor = glowColor; ctx.shadowBlur = 10; }
+    ctx.clip(path2d);
+    const grad = ctx.createLinearGradient(g.x1, g.y1, g.x2, g.y2);
+    stopArr.forEach(([offset, color]) => grad.addColorStop(offset, color));
+    ctx.fillStyle = grad;
+    ctx.fillRect(-6000, -6000, 12000, 12000);
+    ctx.restore();
+  }
+
+  // ---- generic type (Menstrual/Ovulatory/Luteal) ----
+  function drawGenericStage(ctx, stage, openness) {
+    const center = stage.flowerCenter, plumpness = stage.plumpness, fp = stage.fold;
+
+    function drawItem(item) {
+      const path2d = item._path2d || (item._path2d = new Path2D(item.d));
+      const pivot = item._pivot || (item._pivot = parsePivot(item.d));
+      ctx.save();
+      applyPetalFoldGeneric(ctx, pivot, openness, center, plumpness, fp);
+      fillWithGradient(ctx, path2d, stage.stops[item.stop], item.grad, item.opacity, stage.softGlow);
+      ctx.restore();
+    }
+
+    for (const item of stage.center) drawItem(item);
+    for (const item of stage.mirror) {
+      const path2d = item._path2d || (item._path2d = new Path2D(item.d));
+      const pivot = item._pivot || (item._pivot = parsePivot(item.d));
+
+      ctx.save();
+      applyPetalFoldGeneric(ctx, pivot, openness, center, plumpness, fp);
+      fillWithGradient(ctx, path2d, stage.stops[item.stop], item.grad, item.opacity, stage.softGlow);
+      ctx.restore();
+
+      ctx.save();
+      ctx.translate(600, 0);
+      ctx.scale(-1, 1);
+      applyPetalFoldGeneric(ctx, pivot, openness, center, plumpness, fp);
+      fillWithGradient(ctx, path2d, stage.stops[item.stop], item.grad, item.opacity, stage.softGlow);
+      ctx.restore();
+    }
+  }
+
+  // ---- dual type (Follicular) ----
+  function drawDualStage(ctx, stage, openness) {
+    const center = stage.flowerCenter, plumpness = stage.plumpness, fp = stage.fold;
+
+    for (const item of stage.mirror) {
+      const path2d = item._path2d || (item._path2d = new Path2D(item.d));
+      const pivot = item._pivot || (item._pivot = parsePivot(item.d));
+
+      ctx.save();
+      applyPetalFoldGeneric(ctx, pivot, openness, center, plumpness, fp);
+      fillWithGradient(ctx, path2d, stage.flatStops, item.grad, item.opacity, stage.softGlow);
+      ctx.restore();
+
+      ctx.save();
+      ctx.translate(600, 0);
+      ctx.scale(-1, 1);
+      applyPetalFoldGeneric(ctx, pivot, openness, center, plumpness, fp);
+      fillWithGradient(ctx, path2d, stage.flatStops, item.grad, item.opacity, stage.softGlow);
+      ctx.restore();
+    }
+    for (const petal of stage.corePetals) {
+      const path2d = petal._path2d || (petal._path2d = new Path2D(petal.d));
+      ctx.save();
+      applyPetalFoldCore(ctx, petal.outward, openness, center, plumpness);
+      fillWithGradient(ctx, path2d, stage.flatStops, petal.grad, 0.9, stage.softGlow);
+      ctx.restore();
+    }
+  }
+
+  // ---- Follicular stage background: egg cell (oocyte + zona pellucida + corona radiata) ----
+  function drawEggCellBg(ctx, openness) {
+    var cx = 300, cy = 272.6;
+    var breathe = 0.9 + 0.1 * openness;
+    var rx = 146 * breathe, ry = 140 * breathe;
+    var t = p.millis() / 1000;
+
+    ctx.save();
+
+    /* ── Zona pellucida ── thick-membrane-feel double-layer ring */
+    // Outer soft glow
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, rx + 18, ry + 18, 0, 0, Math.PI * 2);
+    var zonaOuter = ctx.createRadialGradient(cx, cy, rx - 8, cx, cy, rx + 24);
+    zonaOuter.addColorStop(0, 'rgba(195,170,240,0.0)');
+    zonaOuter.addColorStop(0.25, 'rgba(195,170,240,0.10)');
+    zonaOuter.addColorStop(0.6, 'rgba(180,155,228,0.16)');
+    zonaOuter.addColorStop(1, 'rgba(165,140,215,0.0)');
+    ctx.fillStyle = zonaOuter;
+    ctx.fill();
+
+    // Membrane outline (double line)
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, rx + 6, ry + 6, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(205,185,248,0.18)';
+    ctx.lineWidth = 5;
+    ctx.stroke();
+
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, rx - 2, ry - 2, 0, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(210,190,250,0.12)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    /* ── Perivitelline space glimmer ── */
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, rx * 0.88, ry * 0.88, 0, 0, Math.PI * 2);
+    var periGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, rx * 0.88);
+    periGrad.addColorStop(0, 'rgba(235,225,255,0.05)');
+    periGrad.addColorStop(1, 'rgba(215,200,248,0.015)');
+    ctx.fillStyle = periGrad;
+    ctx.fill();
+
+    /* ── Corona radiata ── small dots around the membrane */
+    var numDots = 26;
+    for (var i = 0; i < numDots; i++) {
+      var angle = (i / numDots) * Math.PI * 2 + 0.12;
+      var jitter = Math.sin(i * 2.7 + t * 0.4) * 5;
+      var dr = rx + 26 + jitter;
+      var dry = ry + 26 + Math.cos(i * 1.9 + t * 0.3) * 5;
+      var dx = cx + Math.cos(angle) * dr;
+      var dy = cy + Math.sin(angle) * dry;
+      var dotSize = 3.2 + Math.sin(i * 1.8) * 1.2;
+      ctx.beginPath();
+      ctx.arc(dx, dy, dotSize, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(200,180,240,0.13)';
+      ctx.fill();
+    }
+
+    /* ── Polar body hint ── small circle inside the zona pellucida ── */
+    var pbAngle = -Math.PI * 0.35;
+    var pbx = cx + Math.cos(pbAngle) * (rx * 0.78);
+    var pby = cy + Math.sin(pbAngle) * (ry * 0.78);
+    ctx.beginPath();
+    ctx.arc(pbx, pby, 9 * breathe, 0, Math.PI * 2);
+    ctx.fillStyle = 'rgba(195,175,240,0.10)';
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(200,180,245,0.12)';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  // ---- Ovulatory stage background: ovary shape (almond outline + follicle hints + fimbriae) ----
+  function drawOvaryBg(ctx, openness) {
+    var cx = 300, cy = 300;
+    var breathe = 0.92 + 0.08 * openness;
+    var w = 185 * breathe, h = 118 * breathe;
+    var t = p.millis() / 1000;
+
+    ctx.save();
+
+    /* ── Main almond-shaped ovary body ── */
+    ctx.beginPath();
+    ctx.moveTo(cx - w, cy);
+    // Upper arc
+    ctx.bezierCurveTo(cx - w * 0.85, cy - h * 1.15, cx + w * 0.85, cy - h * 1.15, cx + w, cy);
+    // Lower arc
+    ctx.bezierCurveTo(cx + w * 0.85, cy + h * 1.15, cx - w * 0.85, cy + h * 1.15, cx - w, cy);
+    ctx.closePath();
+
+    // Cortex layer fill
+    var cortexGrad = ctx.createRadialGradient(cx, cy, 0, cx, cy, w);
+    cortexGrad.addColorStop(0, 'rgba(255,215,225,0.05)');
+    cortexGrad.addColorStop(0.5, 'rgba(255,195,210,0.035)');
+    cortexGrad.addColorStop(1, 'rgba(255,175,200,0.015)');
+    ctx.fillStyle = cortexGrad;
+    ctx.fill();
+
+    // Tunica albuginea outline
+    ctx.strokeStyle = 'rgba(255,185,210,0.18)';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    /* ── Fimbriae (right side) ── */
+    ctx.beginPath();
+    ctx.moveTo(cx + w - 8, cy - 18);
+    ctx.bezierCurveTo(cx + w + 35, cy - 55, cx + w + 70, cy - 88, cx + w + 95, cy - 72);
+    ctx.strokeStyle = 'rgba(255,185,215,0.14)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    // Fimbrial fringes
+    var fimX = cx + w + 95, fimY = cy - 72;
+    var fimAngles = [-0.9, -0.45, 0, 0.45];
+    for (var fi = 0; fi < fimAngles.length; fi++) {
+      var fa = fimAngles[fi] + Math.sin(t * 0.6 + fi) * 0.08;
+      ctx.beginPath();
+      ctx.moveTo(fimX, fimY);
+      ctx.quadraticCurveTo(
+        fimX + Math.cos(fa) * 14, fimY + Math.sin(fa) * 14,
+        fimX + Math.cos(fa) * 22, fimY + Math.sin(fa) * 20
+      );
+      ctx.strokeStyle = 'rgba(255,185,215,0.10)';
+      ctx.lineWidth = 1.5;
+      ctx.stroke();
+    }
+
+    /* ── Ovarian ligament (left side) ── */
+    ctx.beginPath();
+    ctx.moveTo(cx - w + 8, cy + 12);
+    ctx.bezierCurveTo(cx - w - 25, cy + 35, cx - w - 55, cy + 48, cx - w - 75, cy + 42);
+    ctx.strokeStyle = 'rgba(255,185,215,0.12)';
+    ctx.lineWidth = 2;
+    ctx.stroke();
+
+    /* ── Cortical follicle hints ── translucent circles of varying sizes ── */
+    var follicles = [
+      { x: -0.55, y: -0.35, r: 7.5 }, { x: 0.45, y: 0.4, r: 6 },
+      { x: -0.65, y: 0.25, r: 4.5 }, { x: 0.6, y: -0.25, r: 8 },
+      { x: -0.2, y: 0.55, r: 3.5 },  { x: 0.7, y: 0.12, r: 5 },
+      { x: -0.35, y: -0.55, r: 5.5 },{ x: 0.18, y: -0.48, r: 4 },
+      { x: -0.78, y: -0.05, r: 3.5 },{ x: 0.3, y: 0.58, r: 3 },
+      { x: -0.48, y: 0.48, r: 4 },   { x: 0.55, y: -0.5, r: 3.5 }
+    ];
+    for (var i = 0; i < follicles.length; i++) {
+      var f = follicles[i];
+      var fx = cx + f.x * w * 0.72;
+      var fy = cy + f.y * h * 0.68;
+      var fr = f.r * breathe;
+      ctx.beginPath();
+      ctx.arc(fx, fy, fr, 0, Math.PI * 2);
+      ctx.fillStyle = 'rgba(255,205,220,0.08)';
+      ctx.fill();
+      ctx.strokeStyle = 'rgba(255,185,210,0.10)';
+      ctx.lineWidth = 0.8;
+      ctx.stroke();
+    }
+
+    /* ── Ovulation point hint ── a larger ruptured follicle at upper right ── */
+    var ovPtX = cx + w * 0.6, ovPtY = cy - h * 0.65;
+    ctx.beginPath();
+    ctx.arc(ovPtX, ovPtY, 11 * breathe, 0, Math.PI * 2);
+    var ovGrad = ctx.createRadialGradient(ovPtX, ovPtY, 0, ovPtX, ovPtY, 11 * breathe);
+    ovGrad.addColorStop(0, 'rgba(255,170,200,0.12)');
+    ovGrad.addColorStop(0.6, 'rgba(255,190,215,0.06)');
+    ovGrad.addColorStop(1, 'rgba(255,200,220,0.0)');
+    ctx.fillStyle = ovGrad;
+    ctx.fill();
+    // Rupture opening
+    ctx.beginPath();
+    ctx.arc(ovPtX, ovPtY, 11 * breathe, -0.4, 0.6);
+    ctx.strokeStyle = 'rgba(255,160,195,0.16)';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.restore();
+  }
+
+  function drawFlower(ctx, stageKey, openness) {
+    const stage = STAGES[stageKey];
+    p.push();
+    p.translate(p.width / 2, p.height / 2);
+    p.translate(-300, -300);
+
+    // Biomorphic background layer
+    if (stageKey === 'follicular') drawEggCellBg(ctx, openness);
+    if (stageKey === 'ovulatory') drawOvaryBg(ctx, openness);
+
+    if (stage.type === 'dual') drawDualStage(ctx, stage, openness);
+    else drawGenericStage(ctx, stage, openness);
+    p.pop();
+  }
+
+  function computeOpenness() {
+    const minOpenness = 0.02;
+    const midOpenness = 0.5;
+    if (activity <= 15) return 1.0;
+    if (activity <= 25) return p.map(activity, 15, 25, 1.0, midOpenness);
+    return p.map(p.constrain(activity, 25, 100), 25, 100, midOpenness, minOpenness);
+  }
+
+  function computePulseAndFilter() {
+    const pulseHz = heartbeat / 60;
+    const pulseAmp = 0.025;
+    const saturatePct = p.map(bloodOxygen, 80, 100, 70, 145);
+    const hueDeg = p.map(skinTemp, 35.5, 37.5, -22, 22);
+    const t = p.millis() / 1000;
+    const pulse = 1 + pulseAmp * Math.sin(2 * Math.PI * pulseHz * t);
+    return { pulse, saturatePct, hueDeg };
+  }
+
+  p.setup = function () {
+    const cnv = p.createCanvas(600, 600);
+    cnv.parent('canvas-wrap');
+    p.pixelDensity(p.displayDensity());
+  };
+
+  p.draw = function () {
+    p.clear();
+    const ctx = p.drawingContext;
+    const baseOpenness = computeOpenness();
+    const { pulse, saturatePct, hueDeg } = computePulseAndFilter();
+    const openness = baseOpenness * pulse; // Micro-pulse from heart rate layered on top of the activity-driven openness
+    ctx.filter = `saturate(${saturatePct}%) hue-rotate(${hueDeg}deg)`;
+    drawFlower(ctx, currentStage, openness);
+    ctx.filter = 'none';
+  };
+
+  p.setHeartbeat = v => { heartbeat = v; };
+  p.setBloodOxygen = v => { bloodOxygen = v; };
+  p.setSkinTemp = v => { skinTemp = v; };
+  p.setActivity = v => { activity = v; };
+  p.setStage = key => { currentStage = key; };
+};
+
+window.flowerSketch = new p5(sketch);
+
+function bindSlider(id, valId, unit, setter, isFloat) {
+  const el = document.getElementById(id);
+  const out = document.getElementById(valId);
+  el.addEventListener('input', () => {
+    const v = isFloat ? parseFloat(el.value) : parseInt(el.value, 10);
+    out.textContent = v + unit;
+    setter(v);
+  });
+}
+bindSlider('hr', 'hr-val', ' bpm', v => window.flowerSketch.setHeartbeat(v), false);
+bindSlider('ox', 'ox-val', '', v => window.flowerSketch.setBloodOxygen(v), false);
+bindSlider('temp', 'temp-val', '\u2103', v => window.flowerSketch.setSkinTemp(v), true);
+bindSlider('act', 'act-val', '', v => window.flowerSketch.setActivity(v), false);
+
+document.querySelectorAll('#stage-tabs button').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('#stage-tabs button').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    window.flowerSketch.setStage(btn.dataset.stage);
+  });
+});
+</script>
+</body>
+</html>
