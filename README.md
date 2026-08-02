@@ -1,101 +1,142 @@
+# Bloom Care
+
 # Core Concept
 
-This project combines physiological data collected through Arduino-based sensors with an app that records users' emotions and menstrual cycle information. Using this personal data, the system generates a unique digital flower in real time, encouraging girls to care for themselves just as they would nurture a flower.
+### Project Summary
+
+**Bloom Care** is a wearable biosensor system that transforms women's physiological and emotional data into unique generative flowers, encouraging self-care through real-time data visualization and interactive digital art.
+
+### Overview
+
+Bloom Care combines an Arduino/ESP32-based wearable biosensor, a mobile companion app, and a real-time generative art experience.
+
+The wearable device continuously collects physiological signals throughout different stages of the menstrual cycle, while the mobile app allows users to record their mood, healthy activities, and personal reflections. Using this personal data, Bloom Care generates a unique digital flower that grows and changes in real time.
+
+Rather than simply visualizing health metrics, Bloom Care transforms invisible physiological changes into an emotional and artistic experience. Each flower reflects the user's current physical condition and emotional state, helping them better understand their bodies throughout the menstrual cycle.
+
+By nurturing their digital flower, users are encouraged to develop healthier habits and greater self-awareness. A flourishing flower celebrates physical well-being, while a struggling flower gently reminds users to pay more attention to their bodies and practice self-care.
+
 
 ---
 
 # System Architecture
 
-1. **Data Collection (Hardware):** Arduino
-2. **Data Input & Storage:** Mobile App
-3. **Generative Art:** p5.js
+The system consists of three major components:
+
+1. **Data Collection (Hardware)** — Arduino / ESP32 wearable biosensor
+2. **Data Input & Storage** — Mobile App
+3. **Generative Visualization** — p5.js
 
 ---
 
-# Data Sources (Collected Daily During the Menstrual Cycle)
+# Data Collection
 
-### Automatic Collection (Hardware)
+## Automatic Collection (Hardware)
 
-* Average heart rate
-* Sleep quality (measured by nighttime activity)
-* Skin oil secretion (measured through skin conductivity)
+The wearable device continuously collects physiological signals, including:
 
-### Manual Input (Mobile App)
+* Heart rate
+* Blood oxygen (SpO₂)
+* Skin temperature
+* Physical activity level
 
-* Daily mood (rated from 1–10)
-* Healthy activities completed:
+These measurements are collected throughout the user's menstrual cycle and streamed to the mobile app via Bluetooth.
+
+## Manual Input (Mobile App)
+
+Users can also record:
+
+* Daily mood (1–10 rating)
+* Healthy activities, such as:
 
   * Reading
   * Meditation
   * Exercise
+* Personal notes or memorable events of the day
 
 ---
 
-# Interaction Flow
+# User Experience
 
-## 1. Morning / Daytime
+## Step 1 — Collect Physiological Data
 
-The Arduino device collects physiological data.
+Throughout the day, the wearable device continuously monitors physiological signals.
 
-* The collected data is synchronized with the mobile app in real time via Bluetooth.
-
-## 2. Anytime / Evening
-
-Users open the app to complete their daily check-in.
-
-* The current menstrual cycle phase is automatically recorded.
-* Users log their daily mood.
-
-## 3. Flower Visualization
-
-The flower begins as a seed and gradually evolves based on the user's personal data.
-
-### (1) Color Logic
-
-**Base Color (Menstrual Phase)**
-
-* Menstruation → Red palette
-* Luteal phase → Pink palette
-* Follicular phase → Purple palette
-* Ovulation → Yellow palette
-
-*(Specific colors can be refined later.)*
-
-**Mood Influence**
-
-* Positive mood → Adds warm tones
-* Negative mood → Adds cool tones
-
-**Final Flower Color**
-
-* A blend of the menstrual phase color and mood-based color.
-
-### (2) Morphology Logic
-
-* **Better sleep quality**
-
-  * More petals
-  * Fuller shape
-  * More open and expanded petals
-
-* **Higher skin oil secretion**
-
-  * Increased petal glossiness (adjusting saturation and shine)
-
-* **Heart rate**
-
-  * The flower's center gently pulses in sync with the user's heart rate.
-
-* **Healthy activities**
-
-  * When users record activities such as reading, meditation, or exercise, the flower grows taller.
+The collected data is synchronized with the mobile application in real time through Bluetooth.
 
 ---
 
-## 4. Mobile App Features
+## Step 2 — Daily Check-in
 
-* Each day's generated flower is automatically saved to a calendar, allowing users to observe changes over time.
-* Users can share screenshots of their personal flower garden.
+Users open the app at any time during the day to:
+
+* Automatically record the current menstrual cycle phase
+* Log their daily mood
+* Record healthy activities
+* Write memorable moments or personal reflections
+
+---
+
+## Step 3 — Real-time Flower Generation
+
+Each flower begins as a seed and gradually grows into a unique digital flower based on the user's physiological and emotional data.
+
+### Flower Structure
+
+Each flower's fundamental form is inspired by one of three structures of the female reproductive system:
+
+* Uterus
+* Corpus uteri
+* Ovum
+
+Different menstrual phases determine the flower's basic morphology.
+
+### Visual Mapping
+
+The flower changes according to the following rules:
+
+| Data                                | Visual Effect                                 |
+| ----------------------------------- | --------------------------------------------- |
+| Higher heart rate                   | Faster pulsing animation in the flower center |
+| Higher blood oxygen (SpO₂)          | Richer and more saturated colors              |
+| Higher skin temperature             | Color palette shifts toward warmer hues       |
+| Lower physical activity (more rest) | Fuller, more open blossoms                    |
+
+### Emotional Influence
+
+Mood further adjusts the flower's appearance:
+
+* Positive mood → adds warmer color tones
+* Negative mood → adds cooler color tones
+
+### Healthy Activities
+
+When users complete healthy activities such as reading, meditation, or exercise, the flower grows taller, symbolizing positive self-care.
+
+---
+
+## Step 4 — Personal Flower Garden
+
+Every generated flower is automatically saved to the user's calendar.
+
+Users can:
+
+* Browse flowers from previous dates
+* Observe long-term physical and emotional trends
+* Read past journal entries and notes
+* Share screenshots of their personal flower garden
+
+---
+
+# Design Philosophy
+
+Bloom Care is designed to make invisible physiological changes visible through generative art.
+
+When users notice that their flower appears less healthy, they are encouraged to pay closer attention to their physical and emotional well-being. As they develop healthier habits, their flower gradually becomes more vibrant.
+
+Likewise, seeing a flourishing flower serves as a reminder that their body is healthy, resilient, and beautiful.
+
+The project aims to foster long-term self-awareness and self-care rather than focusing solely on numerical health metrics.
 
 ---
 
@@ -103,74 +144,119 @@ The flower begins as a seed and gradually evolves based on the user's personal d
 
 ## Hardware
 
-* Arduino-based physiological sensing device
-
-## Data Transmission
-
-* The ESP32 sensor transmits physiological data to the app via Bluetooth.
-
-## Mobile App
-
-### (1) Frontend
-
-The app consists of three main pages:
-
-* **Home Page**
-
-  * Displays today's flower.
-  * Allows users to record their mood and healthy activities.
-
-* **Calendar Page**
-
-  * Displays all previously generated flowers in a calendar view.
-
-* **Profile Page**
-
-  * Contains the user's basic information.
-
-### Flower Rendering Workflow
-
-The flower is rendered twice:
-
-1. **First Render**
-
-   * After the previous day's physiological data has been successfully synchronized.
-
-2. **Second Render**
-
-   * After the user submits their daily mood and activities.
-   * The flower remains unchanged for the rest of the day.
-
-A **WebView** component is embedded within the app to load the **p5.js** sketch, where the flower is rendered dynamically.
-
-### (2) Backend
-
-* Bluetooth connection management
-* Sensor data reception
-* Data parsing
-* Passing processed data to the WebView
-
-### (3) Database
-
-* Stores users' historical physiological and emotional data.
+* Arduino / ESP32 wearable biosensor
+* Physiological sensor integration
+* Real-time physiological signal acquisition
 
 ---
 
-# Technologies to Learn
+## Data Transmission
 
-1. p5.js
-2. Arduino
-3. Flutter + Dart + WebView (App Development)
-4. Figma
-5. GitHub
-6. Database Design & Management
+* Bluetooth communication between ESP32 and the mobile app
+* Real-time data synchronization
+
+---
+
+## Mobile App
+
+### Frontend
+
+The application contains three primary pages:
+
+### Home
+
+* Displays today's flower
+* Allows users to record mood
+* Record healthy activities
+* Write daily notes
+
+### Calendar
+
+* Displays every generated flower
+* Allows users to revisit previous flowers
+
+### Profile
+
+* User profile and personal information
+
+---
+
+### Flower Rendering Workflow
+
+The flower is rendered in two stages:
+
+1. **Initial Rendering**
+
+   * After physiological data has been received and synchronized.
+
+2. **Final Rendering**
+
+   * After the user submits mood, activities, and journal entries.
+
+Once the second rendering is completed, the flower remains fixed for that day.
+
+The mobile app embeds a **WebView**, which loads a **p5.js** sketch responsible for rendering the generative flower.
+
+---
+
+### Backend
+
+Responsible for:
+
+* Bluetooth communication
+* Receiving sensor data
+* Parsing physiological signals
+* Passing processed data to the WebView
+
+---
+
+### Database
+
+Stores:
+
+* Physiological history
+* Mood records
+* Daily activities
+* Personal notes
+* Historical flower data
+
+---
+
+# Technology Stack
+
+* Arduino
+* ESP32
+* Bluetooth Low Energy (BLE)
+* Flutter
+* Dart
+* WebView
+* p5.js
+* Database
+* Figma
+* GitHub
+
+---
+
+# Future Learning
+
+* p5.js
+* Arduino & ESP32 development
+* Flutter + Dart
+* Bluetooth Low Energy (BLE)
+* WebView integration
+* Database design
+* UI/UX design with Figma
+* GitHub collaboration
 
 ---
 
 # Responsibilities
 
 * Hardware development
+* Sensor integration
 * Mobile app UI/UX design
-* Real-time flower generation with p5.js
+* Real-time generative flower visualization using p5.js
 * App backend development
+* Bluetooth communication
+* Database integration
 * GitHub project deployment and maintenance
