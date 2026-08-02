@@ -1,92 +1,176 @@
-# 核心概念: 
+# Core Concept
 
-通过Arduino硬件传感器采集生理数据+APP记录情绪与生理期日常，利用个人数据驱动实时生成独一无二的数字花朵，提醒女孩们都要像 “养花一样爱惜自己”。
+This project combines physiological data collected through Arduino-based sensors with an app that records users' emotions and menstrual cycle information. Using this personal data, the system generates a unique digital flower in real time, encouraging girls to care for themselves just as they would nurture a flower.
 
+---
 
+# System Architecture
 
-# 系统组成:
+1. **Data Collection (Hardware):** Arduino
+2. **Data Input & Storage:** Mobile App
+3. **Generative Art:** p5.js
 
-1.采集(硬件): Arduino
-2.数据输入与存储: 打卡APP
-3.艺术生成: p5.js
+---
 
+# Data Sources (Collected Daily During the Menstrual Cycle)
 
+### Automatic Collection (Hardware)
 
-# 数据来源(生理期每天采集):
+* Average heart rate
+* Sleep quality (measured by nighttime activity)
+* Skin oil secretion (measured through skin conductivity)
 
-·自动采集(硬件):
-  ·心率(平均值)
-  ·睡眠质量(夜间活动量)
-  ·皮肤油脂分泌(皮肤导电)
- 
-·手动输入(APP):
-  ·当天心情(1-10分数)
-  ·当天健康行为:读书、冥想、运动
+### Manual Input (Mobile App)
 
-# 交互逻辑:
-1. 早晨/白天: 使用Arduino设备采集数据
-·数据实时通过bluetooth同步到APP.
+* Daily mood (rated from 1–10)
+* Healthy activities completed:
 
-2. 随时/晚上: 打开APP
-·生理期阶段自动记录
-·记录当天心情
+  * Reading
+  * Meditation
+  * Exercise
 
-3. 页面交互：
-花朵一开始是一颗种子的形象, 根据上传的个人数据变化 ：
-(1)颜色逻辑:
-·生理期基础色: 经期-->红色系; 黄体期--> 粉色系; 卵泡期--≥紫色系; 排卵期-->黄色系(具体颜色可以后续商定)
-·心情影响:积极-->加入暖色; 负面-->加入冷色
-·最终颜色: 混合结果
-(2)形态逻辑:
-·睡眠好-->滑板数量多、饱满、舒展(调整形状)
-·油脂分泌高-->花瓣光泽感更强(调整饱和度)
-·心率：花蕊按心率频率轻微跳动（视觉化)
-·用户可以选择读书、冥想、运动等健康的放松方式，按下按钮，花会长高
+---
 
-4. app:
-·将每天的花自动存在日历里面，便于观察花瓣的变化趋势
-·可分享花园截图
+# Interaction Flow
 
-# 技术:
+## 1. Morning / Daytime
 
-·硬件部分:Arduino+code 制作检测器
+The Arduino device collects physiological data.
 
-·数据传输（把检测器数据传输到storage place): 利用bluetooth,让ESP32（检测器）通过bluetooth发送数据
+* The collected data is synchronized with the mobile app in real time via Bluetooth.
 
-·app: 
-(1 前端ui: ui很简单，就是主页面是今天的花，旁边的按钮可以输入自己今天的心情和自己做了什么（读书......). 然后第二个页面就是整个日历，日历里面全部放着花. 第三个页面是使用者的主页（基本信息什么的). 
-UI层第一次重绘花朵要在传输完前一天的生理数据; 第二次重绘是使用者输入完自己干的事情和心情,之后花朵就不会再变化
-在所选用的app开发软件中插入webview组建，用webview来加载p5.js，然后p5.js在ui层开始渲染花朵
+## 2. Anytime / Evening
 
-(2 后端:
-·bluetooth连接
-·接受传感器数据
-·解析数据
-·把数据传给webview
+Users open the app to complete their daily check-in.
 
-(3 数据库:
-·保存用户历史数据
+* The current menstrual cycle phase is automatically recorded.
+* Users log their daily mood.
 
+## 3. Flower Visualization
 
-# 所有要学习的:
-(1 p5.js
-(2 andruino
-(3 Flutter+Dart+WebView(构建app)
-(4 Figma
-(5 GitHub
-(6 database
+The flower begins as a seed and gradually evolves based on the user's personal data.
 
+### (1) Color Logic
 
+**Base Color (Menstrual Phase)**
 
-# 负责部分:
-·硬件
-·app前端ui设计
-·p5.js实时渲染
-·app后端
-·github部署
+* Menstruation → Red palette
+* Luteal phase → Pink palette
+* Follicular phase → Purple palette
+* Ovulation → Yellow palette
 
-                      
+*(Specific colors can be refined later.)*
 
+**Mood Influence**
 
+* Positive mood → Adds warm tones
+* Negative mood → Adds cool tones
 
+**Final Flower Color**
 
+* A blend of the menstrual phase color and mood-based color.
+
+### (2) Morphology Logic
+
+* **Better sleep quality**
+
+  * More petals
+  * Fuller shape
+  * More open and expanded petals
+
+* **Higher skin oil secretion**
+
+  * Increased petal glossiness (adjusting saturation and shine)
+
+* **Heart rate**
+
+  * The flower's center gently pulses in sync with the user's heart rate.
+
+* **Healthy activities**
+
+  * When users record activities such as reading, meditation, or exercise, the flower grows taller.
+
+---
+
+## 4. Mobile App Features
+
+* Each day's generated flower is automatically saved to a calendar, allowing users to observe changes over time.
+* Users can share screenshots of their personal flower garden.
+
+---
+
+# Technical Implementation
+
+## Hardware
+
+* Arduino-based physiological sensing device
+
+## Data Transmission
+
+* The ESP32 sensor transmits physiological data to the app via Bluetooth.
+
+## Mobile App
+
+### (1) Frontend
+
+The app consists of three main pages:
+
+* **Home Page**
+
+  * Displays today's flower.
+  * Allows users to record their mood and healthy activities.
+
+* **Calendar Page**
+
+  * Displays all previously generated flowers in a calendar view.
+
+* **Profile Page**
+
+  * Contains the user's basic information.
+
+### Flower Rendering Workflow
+
+The flower is rendered twice:
+
+1. **First Render**
+
+   * After the previous day's physiological data has been successfully synchronized.
+
+2. **Second Render**
+
+   * After the user submits their daily mood and activities.
+   * The flower remains unchanged for the rest of the day.
+
+A **WebView** component is embedded within the app to load the **p5.js** sketch, where the flower is rendered dynamically.
+
+### (2) Backend
+
+* Bluetooth connection management
+* Sensor data reception
+* Data parsing
+* Passing processed data to the WebView
+
+### (3) Database
+
+* Stores users' historical physiological and emotional data.
+
+---
+
+# Technologies to Learn
+
+1. p5.js
+2. Arduino
+3. Flutter + Dart + WebView (App Development)
+4. Figma
+5. GitHub
+6. Database Design & Management
+
+---
+
+# Responsibilities
+
+* Hardware development
+* Mobile app UI/UX design
+* Real-time flower generation with p5.js
+* App backend development
+* GitHub project deployment and maintenance
